@@ -1,20 +1,15 @@
 {
+  "id": "/",
   "name": "INCLAVE ERP",
-  "short_name": "INCLAVE ERP",
+  "short_name": "INCLAVE",
   "description": "Система управления предприятием INCLAVE",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#08090a",
   "icons": [
-    {
-      "src": "/favicon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",

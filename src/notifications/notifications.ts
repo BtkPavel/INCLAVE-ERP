@@ -17,7 +17,7 @@ export function showWelcomeNotification(userName: string): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   new Notification('INCLAVE ERP', {
     body: `Добро пожаловать, ${userName}. Уведомления включены.`,
-    icon: '/favicon.svg',
+    icon: '/icon-192.png',
     tag: 'inclave-erp-welcome',
   });
 }
@@ -26,7 +26,7 @@ export function showEventReminder(title: string, body: string): void {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   new Notification('INCLAVE ERP · Календарь', {
     body: `${title} — ${body}`,
-    icon: '/favicon.svg',
+    icon: '/icon-192.png',
     tag: `inclave-event-${title}-${Date.now()}`,
   });
 }
