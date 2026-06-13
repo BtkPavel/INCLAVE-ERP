@@ -18,4 +18,4 @@ find "$APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp -r dist/* "$APP_DIR"/
 chown -R www-data:www-data "$APP_DIR"
 
-echo "==> Готово: http://$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')/"
+echo "==> Готово: https://$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')/"

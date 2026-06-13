@@ -45,23 +45,21 @@ find "$APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp -r dist/* "$APP_DIR"/
 chown -R www-data:www-data "$APP_DIR"
 
-echo "==> Настройка Nginx..."
-cp "$SRC_DIR/deploy/nginx.conf" /etc/nginx/sites-available/inclave-erp
-ln -sf /etc/nginx/sites-available/inclave-erp /etc/nginx/sites-enabled/inclave-erp
-rm -f /etc/nginx/sites-enabled/default
-nginx -t
-systemctl enable nginx
-systemctl restart nginx
+echo "==> SSL и Nginx..."
+SERVER_IP="${SERVER_IP:-$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')}"
+export SERVER_IP SRC_DIR
+bash "$SRC_DIR/deploy/setup-ssl.sh"
 
 echo "==> Firewall..."
 ufw allow OpenSSH >/dev/null 2>&1 || ufw allow 22/tcp
 ufw allow 80/tcp
+ufw allow 443/tcp
 ufw --force enable
 
 echo ""
 echo "============================================"
 echo "  INCLAVE ERP развёрнут успешно!"
-echo "  Откройте: http://$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')/"
+echo "  Откройте: https://${SERVER_IP}/"
 echo "  Исходники: ${SRC_DIR}"
 echo "  Статика:   ${APP_DIR}"
 echo "  Пароли:    отредактируйте ${SRC_DIR}/.env и запустите deploy/update.sh"
