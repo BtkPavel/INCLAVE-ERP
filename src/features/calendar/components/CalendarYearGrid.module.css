@@ -1,0 +1,151 @@
+.year {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.monthCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.monthTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  padding: 4px 2px;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.monthTitle:hover {
+  background: var(--surface-hover);
+}
+
+.monthCount {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-active);
+}
+
+.miniWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.miniWeekdays span {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.miniGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.miniEmpty {
+  aspect-ratio: 1;
+}
+
+.miniDay {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.miniDay:hover {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}
+
+.miniSelected {
+  background: var(--accent-bg);
+  color: var(--text-primary);
+}
+
+.miniToday {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.miniHasEvents {
+  position: relative;
+}
+
+.miniHasEvents::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.miniHasTasks {
+  color: #3d9a8b;
+  font-weight: 600;
+}
+
+.miniHasTasks:not(.miniHasEvents)::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #3d9a8b;
+}
+
+.miniHoliday {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.miniHoliday.miniHasEvents::after {
+  background: var(--danger);
+}
+
+@media (max-width: 1200px) {
+  .year {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .year {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .year {
+    grid-template-columns: 1fr;
+  }
+}

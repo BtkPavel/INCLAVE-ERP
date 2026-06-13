@@ -1,0 +1,103 @@
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  min-height: 420px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.column:hover {
+  border-color: var(--surface-border-hover);
+}
+
+.selected {
+  border-color: rgba(94, 106, 210, 0.5);
+  background: var(--accent-bg);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.weekday {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dayNum {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.today .dayNum {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.holiday .dayNum {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.holiday.today .dayNum {
+  background: var(--danger);
+  color: #fff;
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px 8px;
+}
+
+@media (max-width: 900px) {
+  .week {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .column {
+    min-height: auto;
+  }
+
+  .events {
+    max-height: 200px;
+  }
+}

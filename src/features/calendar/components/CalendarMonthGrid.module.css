@@ -1,0 +1,140 @@
+.grid {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.weekday {
+  padding: 10px 8px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 100px;
+  padding: 8px;
+  border: none;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.cell:nth-child(7n) {
+  border-right: none;
+}
+
+.cell:hover {
+  background: var(--surface-raised);
+}
+
+.outside {
+  opacity: 0.35;
+}
+
+.selected {
+  background: var(--accent-bg);
+}
+
+.selected:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.today .dayNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-weight: 600;
+}
+
+.holiday .dayNum {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.holiday.today .dayNum {
+  background: var(--danger);
+  color: #fff;
+}
+
+.dayNum {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.more {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 6px;
+}
+
+@media (max-width: 900px) {
+  .cell {
+    min-height: 72px;
+    padding: 6px 4px;
+  }
+
+  .events {
+    display: none;
+  }
+
+  .hasEvents .dayNum::after {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: middle;
+  }
+}
+
+@media (max-width: 480px) {
+  .cell {
+    min-height: 48px;
+  }
+
+  .dayNum {
+    font-size: 12px;
+  }
+}

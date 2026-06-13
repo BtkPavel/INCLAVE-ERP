@@ -1,0 +1,241 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-solid);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: var(--surface-border-hover);
+  background: var(--surface-active);
+}
+
+.triggerOpen {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-solid));
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.triggerEmpty .value {
+  color: var(--text-muted);
+}
+
+.trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: flex;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.hiddenInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: min(100%, 300px);
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-solid);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-modal);
+  animation: popIn 0.16s ease;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.month {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 18px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-solid);
+  background: var(--surface-hover);
+  transition: color 0.15s, background 0.15s;
+}
+
+.navBtn:hover {
+  color: var(--text-primary);
+  background: var(--surface-strong);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.day {
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 9px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  transition: background 0.12s, color 0.12s;
+}
+
+.day:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.dayOutside {
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+.dayToday:not(.daySelected) {
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.daySelected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.dayDisabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.footerBtn,
+.footerBtnAccent {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.footerBtn {
+  color: var(--text-secondary);
+}
+
+.footerBtn:hover {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.footerBtnAccent {
+  margin-left: auto;
+  color: var(--accent);
+}
+
+.footerBtnAccent:hover {
+  background: var(--accent-bg);
+}
+
+@media (max-width: 480px) {
+  .popover {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(calc(100vw - 32px), 300px);
+  }
+
+  @keyframes popIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+  }
+}

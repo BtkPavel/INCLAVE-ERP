@@ -1,0 +1,186 @@
+.day {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.holidays {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--danger) 8%, var(--bg-card));
+}
+
+.holidaysLabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--danger);
+  margin-bottom: 10px;
+}
+
+.tasks {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, #3d9a8b 8%, var(--bg-card));
+}
+
+.tasksLabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3d9a8b;
+  margin-bottom: 10px;
+}
+
+.tasksList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.allDay {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.allDayLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  padding-top: 4px;
+  min-width: 72px;
+}
+
+.allDayEvents {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  min-height: 52px;
+  border-bottom: 1px solid var(--border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.hour {
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+}
+
+.slot {
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slotEvent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--event-color) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color) 35%, transparent);
+  border-left: 3px solid var(--event-color);
+  transition: background 0.12s;
+}
+
+.slotEvent:hover {
+  background: color-mix(in srgb, var(--event-color) 24%, transparent);
+}
+
+.slotTime {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.slotTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slotPriority {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--event-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reminder {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.addBtn {
+  margin-top: 16px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.nowLine {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .row {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .hour {
+    padding: 8px 6px;
+    font-size: 10px;
+  }
+}

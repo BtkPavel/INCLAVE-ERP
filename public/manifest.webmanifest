@@ -1,0 +1,16 @@
+{
+  "name": "INCLAVE ERP",
+  "short_name": "INCLAVE ERP",
+  "description": "Система управления предприятием INCLAVE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090a",
+  "theme_color": "#08090a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

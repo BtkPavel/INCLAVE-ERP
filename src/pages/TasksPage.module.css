@@ -1,0 +1,78 @@
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  min-width: 88px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-solid);
+  background: var(--bg-card);
+}
+
+.statValue {
+  display: block;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.statDanger .statValue {
+  color: var(--danger);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 16px;
+}
+
+.filterBtn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-solid);
+  background: transparent;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.filterBtn:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.filterActive {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-solid));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.loading,
+.error {
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.loading {
+  color: var(--text-secondary);
+  border: 1px solid var(--border-solid);
+}
+
+.error {
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+}

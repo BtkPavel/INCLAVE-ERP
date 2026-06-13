@@ -1,0 +1,97 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border-solid);
+  background: var(--bg-card);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-solid);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.field input {
+  height: 38px;
+}
+
+.field input:hover,
+.field textarea:hover {
+  border-color: var(--surface-border-hover);
+  background: var(--surface-active);
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-solid));
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.field select {
+  height: 38px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancelBtn,
+.submitBtn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cancelBtn {
+  color: var(--text-secondary);
+  border: 1px solid var(--border-solid);
+}
+
+.submitBtn {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

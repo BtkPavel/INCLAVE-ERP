@@ -1,0 +1,94 @@
+.view {
+  width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: -12px 0 16px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendHoliday {
+  background: var(--danger);
+}
+
+.legendTask {
+  background: #3d9a8b;
+}
+
+.legendText {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.legendPriority {
+  display: inline-flex;
+}
+
+.legendPriority .legendDot {
+  background: var(--priority-color);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.bodyYear {
+  grid-template-columns: 1fr;
+}
+
+.main {
+  position: relative;
+  min-width: 0;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-loading);
+  border-radius: 14px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border-solid);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
