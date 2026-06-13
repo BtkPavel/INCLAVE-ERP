@@ -14,8 +14,8 @@ export function Layout({ children }: { children: ReactNode }) {
         onMenuToggle={() => setMenuOpen((v) => !v)}
       />
       <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <main className={styles.main}>
-        <div className={styles.content}>
+      <main className={`${styles.main} app-main`}>
+        <div className={`${styles.content} app-content`}>
           <NotificationBanner />
           {children}
         </div>

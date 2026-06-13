@@ -7,24 +7,17 @@ import styles from './EventChip.module.css';
 interface EventChipProps {
   event: CalendarEvent;
   compact?: boolean;
+  /** Только отображение (клик обрабатывает родитель). */
+  static?: boolean;
   onClick?: (event: CalendarEvent) => void;
 }
 
-export function EventChip({ event, compact, onClick }: EventChipProps) {
+export function EventChip({ event, compact, static: isStatic, onClick }: EventChipProps) {
   const priority = event.priority ?? 'medium';
   const color = EVENT_PRIORITY_COLORS[priority];
 
-  return (
-    <button
-      type="button"
-      className={`${styles.chip} ${compact ? styles.compact : ''}`}
-      style={{ '--event-color': color } as CSSProperties}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick?.(event);
-      }}
-      title={`${event.title} · ${EVENT_PRIORITY_LABELS[priority]}`}
-    >
+  const content = (
+    <>
       {!event.allDay && !compact && (
         <span className={styles.time}>{formatTime(event.startAt)}</span>
       )}
@@ -37,6 +30,35 @@ export function EventChip({ event, compact, onClick }: EventChipProps) {
         )}
         {event.title}
       </span>
+    </>
+  );
+
+  const className = `${styles.chip} ${compact ? styles.compact : ''}`;
+
+  if (isStatic) {
+    return (
+      <div
+        className={className}
+        style={{ '--event-color': color } as CSSProperties}
+        title={`${event.title} · ${EVENT_PRIORITY_LABELS[priority]}`}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={className}
+      style={{ '--event-color': color } as CSSProperties}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.(event);
+      }}
+      title={`${event.title} · ${EVENT_PRIORITY_LABELS[priority]}`}
+    >
+      {content}
     </button>
   );
 }

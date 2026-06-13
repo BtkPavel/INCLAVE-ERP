@@ -70,12 +70,19 @@ export function CalendarMonthGrid({
           );
 
           return (
-            <button
+            <div
               key={date.toISOString()}
-              type="button"
+              role="button"
+              tabIndex={0}
               className={`${styles.cell} ${!inMonth ? styles.outside : ''} ${selected ? styles.selected : ''} ${today ? styles.today : ''} ${isHoliday ? styles.holiday : ''} ${hasItems ? styles.hasEvents : ''}`}
               onClick={() => onSelectDate(date)}
               onDoubleClick={() => onCreateOnDate(date)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectDate(date);
+                }
+              }}
             >
               <span className={styles.dayNum}>{formatDayNumber(date)}</span>
               <div className={styles.events}>
@@ -97,7 +104,7 @@ export function CalendarMonthGrid({
                   <span className={styles.more}>+{extra} ещё</span>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

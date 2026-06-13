@@ -11,7 +11,7 @@ export function Header({ onMenuToggle, menuOpen }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
-    <header className={styles.header}>
+    <header className={`${styles.header} app-header`}>
       <div className={styles.gradient} aria-hidden />
       <div className={styles.inner}>
         <div className={styles.left}>

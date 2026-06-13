@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import type {
   CalendarEvent,
   CreateEventDto,
@@ -11,6 +12,7 @@ import { DatePicker } from '../../../components/DatePicker';
 import { FormSelect } from '../../../components/FormSelect';
 import { EVENT_TYPE_LABELS, EVENT_PRIORITY_LABELS, REMINDER_OPTIONS } from '../constants';
 import { parseTimeFromISO, toDateKey, toISODateTime } from '../utils/dates';
+import { isPwaStandalone } from '../../../utils/pwa';
 import styles from './EventModal.module.css';
 
 interface EventModalProps {
@@ -24,6 +26,7 @@ interface EventModalProps {
 
 const TYPES = Object.keys(EVENT_TYPE_LABELS) as EventType[];
 const PRIORITIES = Object.keys(EVENT_PRIORITY_LABELS) as EventPriority[];
+const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
 
 export function EventModal({
   open,
@@ -72,6 +75,14 @@ export function EventModal({
       setPriority('medium');
     }
   }, [open, event, selectedDate]);
+
+  useEffect(() => {
+    if (!open) return;
+    document.body.classList.add('modal-open');
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -133,7 +144,9 @@ export function EventModal({
     }
   }
 
-  return (
+  const skipAutoFocus = isPwaStandalone() || isTouchDevice;
+
+  return createPortal(
     <div className={styles.overlay} onClick={onClose} role="presentation">
       <div
         className={styles.modal}
@@ -160,7 +173,7 @@ export function EventModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Совещание, дедлайн…"
               required
-              autoFocus
+              autoFocus={!skipAutoFocus}
             />
           </label>
 
@@ -266,7 +279,7 @@ export function EventModal({
             )}
             <div className={styles.actionsRight}>
               <button type="button" className={styles.cancelBtn} onClick={onClose}>
-                Отмена
+                {event ? 'Закрыть' : 'Отмена'}
               </button>
               <button type="submit" className={styles.saveBtn} disabled={saving}>
                 {saving ? 'Сохранение…' : 'Сохранить'}
@@ -275,6 +288,7 @@ export function EventModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

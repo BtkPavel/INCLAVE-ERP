@@ -33,7 +33,6 @@
   align-items: stretch;
   min-height: 100px;
   padding: 8px;
-  border: none;
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   background: transparent;
@@ -126,6 +125,19 @@
     border-radius: 50%;
     background: var(--accent);
     vertical-align: middle;
+  }
+
+  /* PWA: события в сетке месяца снова видны и нажимаются */
+  :global(html[data-pwa='true']) .events {
+    display: flex;
+  }
+
+  :global(html[data-pwa='true']) .hasEvents .dayNum::after {
+    display: none;
+  }
+
+  :global(html[data-pwa='true']) .cell {
+    min-height: 64px;
   }
 }
 

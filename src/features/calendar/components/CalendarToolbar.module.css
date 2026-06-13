@@ -118,14 +118,30 @@
   .left,
   .right {
     justify-content: space-between;
+    min-width: 0;
   }
 
   .period {
     font-size: 16px;
     margin-left: 4px;
+    white-space: normal;
+    line-height: 1.25;
   }
 
   .createBtn {
     flex: 1;
   }
+}
+
+:global(html[data-pwa='true']) .toolbar {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+:global(html[data-pwa='true']) .viewToggle {
+  max-width: 100%;
+}
+
+:global(html[data-pwa='true']) .right {
+  flex-wrap: wrap;
 }

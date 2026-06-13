@@ -66,7 +66,7 @@ export function CalendarSidebar({
                     className={styles.eventCard}
                     onClick={() => onTaskClick(task)}
                   >
-                    <TaskChip task={task} />
+                    <TaskChip task={task} static />
                     <span className={styles.eventMeta}>
                       {TASK_STATUS_LABELS[task.status]} · {TASK_PRIORITY_LABELS[task.priority]}
                     </span>
@@ -88,7 +88,7 @@ export function CalendarSidebar({
                   className={styles.eventCard}
                   onClick={() => onEventClick(event)}
                 >
-                  <EventChip event={event} />
+                  <EventChip event={event} static />
                   <span className={styles.eventMeta}>
                     {EVENT_TYPE_LABELS[event.type]}
                     {' · '}

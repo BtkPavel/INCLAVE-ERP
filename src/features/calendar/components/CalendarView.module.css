@@ -92,3 +92,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+:global(html[data-pwa='true']) .legend {
+  gap: 10px;
+  margin: -8px 0 12px;
+}
+
+:global(html[data-pwa='true']) .legendItem {
+  font-size: 11px;
+}
+
+:global(html[data-pwa='true']) .view {
+  min-width: 0;
+  overflow-x: hidden;
+}

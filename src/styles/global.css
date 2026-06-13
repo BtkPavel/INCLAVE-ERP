@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400&family=Inter:wght@400;500;600&display=swap');
+@import './pwa-mobile.css';
 
 :root,
 [data-theme='dark'] {
@@ -96,6 +97,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {

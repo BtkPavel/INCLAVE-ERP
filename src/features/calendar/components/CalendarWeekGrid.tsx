@@ -47,11 +47,18 @@ export function CalendarWeekGrid({
         const isEmpty = dayEvents.length === 0 && dayTasks.length === 0 && holidays.length === 0;
 
         return (
-          <button
+          <div
             key={date.toISOString()}
-            type="button"
+            role="button"
+            tabIndex={0}
             className={`${styles.column} ${selected ? styles.selected : ''} ${today ? styles.today : ''} ${isHoliday ? styles.holiday : ''}`}
             onClick={() => onSelectDate(date)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectDate(date);
+              }
+            }}
           >
             <div className={styles.header}>
               <span className={styles.weekday}>{formatWeekdayShort(date)}</span>
@@ -72,7 +79,7 @@ export function CalendarWeekGrid({
                 </>
               )}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

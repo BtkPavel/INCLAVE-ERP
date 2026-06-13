@@ -206,3 +206,34 @@
     max-height: 92dvh;
   }
 }
+
+:global(html[data-pwa='true']) .overlay {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+:global(html[data-pwa='true']) .modal {
+  max-height: calc(92dvh - env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+:global(html[data-pwa='true']) .actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+:global(html[data-pwa='true']) .actionsRight {
+  margin-left: 0;
+  flex-direction: column;
+}
+
+:global(html[data-pwa='true']) .cancelBtn,
+:global(html[data-pwa='true']) .saveBtn {
+  width: 100%;
+  height: 44px;
+}
+
+:global(html[data-pwa='true']) .deleteBtn {
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+}

@@ -49,3 +49,8 @@
   letter-spacing: 0.04em;
   color: var(--event-color);
 }
+
+:global(html[data-pwa='true']) .chip {
+  min-height: 28px;
+  -webkit-tap-highlight-color: transparent;
+}
