@@ -1,0 +1,22 @@
+name: Deploy to VDS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/inclave-erp
+            git pull --ff-only
+            bash deploy/update.sh
+            bash deploy/apply-nginx.sh

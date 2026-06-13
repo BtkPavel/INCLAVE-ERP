@@ -1,5 +1,6 @@
-import type { CalendarEvent, CreateEventDto, EventType, EventPriority, ReminderMinutes } from '../../../api/types/calendar';
-import { endOfMonth, endOfYear, startOfMonth, startOfYear, toISODateTime } from '../utils/dates';
+import type { CalendarEvent, CreateEventDto } from '../../../api/types/calendar';
+import { loadJson, saveJson } from '../../../storage/persistence';
+import { endOfMonth, endOfYear, startOfMonth, startOfYear } from '../utils/dates';
 
 const STORAGE_KEY = 'inclave-erp-calendar-events';
 
@@ -12,66 +13,11 @@ function normalizeEvent(raw: CalendarEvent): CalendarEvent {
 }
 
 function loadAll(): CalendarEvent[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seedEvents();
-    return (JSON.parse(raw) as CalendarEvent[]).map(normalizeEvent);
-  } catch {
-    return seedEvents();
-  }
+  return loadJson<CalendarEvent[]>(STORAGE_KEY, []).map(normalizeEvent);
 }
 
 function saveAll(events: CalendarEvent[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-}
-
-function seedEvents(): CalendarEvent[] {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const seeds: Array<{
-    title: string;
-    type: EventType;
-    day: number;
-    sh: number;
-    sm: number;
-    eh: number;
-    em: number;
-    allDay?: boolean;
-    reminderMinutes?: ReminderMinutes | null;
-    priority?: EventPriority;
-  }> = [
-    { title: 'Совет директоров', type: 'meeting', day: 5, sh: 10, sm: 0, eh: 11, em: 30, reminderMinutes: 30, priority: 'high' },
-    { title: 'Сдача отчётности', type: 'deadline', day: 12, sh: 18, sm: 0, eh: 18, em: 0, allDay: true, reminderMinutes: 1440, priority: 'urgent' },
-    { title: 'Созвон с командой', type: 'meeting', day: 15, sh: 14, sm: 0, eh: 15, em: 0, reminderMinutes: 15, priority: 'medium' },
-    { title: 'Проверка бюджета', type: 'reminder', day: 20, sh: 9, sm: 0, eh: 9, em: 30, reminderMinutes: 60, priority: 'low' },
-    { title: 'Планёрка проектов', type: 'meeting', day: 25, sh: 11, sm: 0, eh: 12, em: 0, reminderMinutes: 15, priority: 'medium' },
-  ];
-
-  const events: CalendarEvent[] = seeds.map((s, i) => {
-    const date = new Date(y, m, s.day);
-    const startAt = toISODateTime(date, s.sh, s.sm);
-    const endAt = toISODateTime(date, s.eh, s.em);
-    const ts = new Date().toISOString();
-    return {
-      id: `seed-${i + 1}`,
-      title: s.title,
-      description: null,
-      type: s.type,
-      priority: s.priority ?? 'medium',
-      startAt,
-      endAt,
-      allDay: s.allDay ?? false,
-      reminderMinutes: s.reminderMinutes ?? null,
-      projectId: null,
-      createdBy: 'system',
-      createdAt: ts,
-      updatedAt: ts,
-    };
-  });
-
-  saveAll(events);
-  return events;
+  saveJson(STORAGE_KEY, events);
 }
 
 function inRange(event: CalendarEvent, from?: string, to?: string): boolean {

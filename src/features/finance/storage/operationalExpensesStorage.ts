@@ -3,77 +3,16 @@ import type {
   OperationalExpense,
   PaymentRecurrence,
 } from '../../../api/types/finance';
+import { loadJson, saveJson } from '../../../storage/persistence';
 
 const STORAGE_KEY = 'inclave-erp-operational-expenses';
 
-function seedExpenses(): OperationalExpense[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const ts = now.toISOString();
-
-  const seeds: Array<Omit<OperationalExpense, 'id' | 'createdAt' | 'updatedAt'>> = [
-    {
-      title: 'Аренда офиса',
-      amount: 4_500,
-      currency: 'BYN',
-      category: 'аренда',
-      startDate: `${year}-${month}-01`,
-      billingStatus: 'cyclic',
-      recurrence: 'monthly',
-    },
-    {
-      title: 'Страхование имущества',
-      amount: 18_000,
-      currency: 'BYN',
-      category: 'страхование',
-      startDate: `${year}-01-15`,
-      billingStatus: 'cyclic',
-      recurrence: 'yearly',
-    },
-    {
-      title: 'Бухгалтерский аутсорс',
-      amount: 9_000,
-      currency: 'BYN',
-      category: 'услуги',
-      startDate: `${year}-${month}-20`,
-      billingStatus: 'cyclic',
-      recurrence: 'quarterly',
-    },
-    {
-      title: 'Закупка оборудования',
-      amount: 12_800,
-      currency: 'BYN',
-      category: 'закупки',
-      startDate: `${year}-${month}-25`,
-      billingStatus: 'one_time',
-      recurrence: null,
-    },
-  ];
-
-  const expenses = seeds.map((item, index) => ({
-    ...item,
-    id: `seed-opex-${index + 1}`,
-    createdAt: ts,
-    updatedAt: ts,
-  }));
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-  return expenses;
-}
-
 function loadAll(): OperationalExpense[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seedExpenses();
-    return JSON.parse(raw) as OperationalExpense[];
-  } catch {
-    return seedExpenses();
-  }
+  return loadJson<OperationalExpense[]>(STORAGE_KEY, []);
 }
 
 function saveAll(expenses: OperationalExpense[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+  saveJson(STORAGE_KEY, expenses);
 }
 
 function validateRecurrence(

@@ -1,83 +1,15 @@
 import type { CreateTaskDto, Task, TaskStats, TaskStatus, UpdateTaskDto } from '../../../api/types/tasks';
 import type { UserRole } from '../../../auth/users';
+import { loadJson, saveJson } from '../../../storage/persistence';
 
 const STORAGE_KEY = 'inclave-erp-tasks';
-const INITIALIZED_PREFIX = 'inclave-erp-tasks-initialized-';
-
-function buildSeedTasks(assigneeId: UserRole): Task[] {
-  const now = new Date();
-  const ts = now.toISOString();
-  const inThreeDays = new Date(now);
-  inThreeDays.setDate(inThreeDays.getDate() + 3);
-  const inWeek = new Date(now);
-  inWeek.setDate(inWeek.getDate() + 7);
-
-  const seeds: Array<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'completedAt' | 'assigneeId'>> = [
-    {
-      title: 'Подготовить отчёт за квартал',
-      description: 'Собрать данные по проектам и финансам',
-      status: 'todo',
-      priority: 'high',
-      projectId: null,
-      dueDate: inThreeDays.toISOString().slice(0, 10),
-    },
-    {
-      title: 'Согласовать договор с подрядчиком',
-      description: null,
-      status: 'in_progress',
-      priority: 'medium',
-      projectId: null,
-      dueDate: inWeek.toISOString().slice(0, 10),
-    },
-  ];
-
-  return seeds.map((item, index) => ({
-    ...item,
-    id: `seed-task-${assigneeId}-${index + 1}`,
-    assigneeId,
-    completedAt: null,
-    createdAt: ts,
-    updatedAt: ts,
-  }));
-}
 
 function loadAll(): Task[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Task[];
-  } catch {
-    return [];
-  }
+  return loadJson<Task[]>(STORAGE_KEY, []);
 }
 
 function saveAll(tasks: Task[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-}
-
-function isInitialized(assigneeId: UserRole): boolean {
-  return localStorage.getItem(`${INITIALIZED_PREFIX}${assigneeId}`) === '1';
-}
-
-function markInitialized(assigneeId: UserRole): void {
-  localStorage.setItem(`${INITIALIZED_PREFIX}${assigneeId}`, '1');
-}
-
-/** Демо-задачи только при первом входе пользователя, не при пустом списке */
-function ensureSeeded(assigneeId: UserRole): Task[] {
-  if (isInitialized(assigneeId)) {
-    return loadAll();
-  }
-
-  const tasks = loadAll();
-  const hasMine = tasks.some((task) => task.assigneeId === assigneeId);
-
-  if (!hasMine) {
-    saveAll([...tasks, ...buildSeedTasks(assigneeId)]);
-  }
-
-  markInitialized(assigneeId);
-  return loadAll();
+  saveJson(STORAGE_KEY, tasks);
 }
 
 function sortTasks(tasks: Task[]): Task[] {
@@ -101,9 +33,7 @@ function sortTasks(tasks: Task[]): Task[] {
 
 export const tasksStorage = {
   listForUser(assigneeId: UserRole, status?: TaskStatus): Task[] {
-    const tasks = ensureSeeded(assigneeId).filter(
-      (task) => task.assigneeId === assigneeId,
-    );
+    const tasks = loadAll().filter((task) => task.assigneeId === assigneeId);
     const filtered = status ? tasks.filter((task) => task.status === status) : tasks;
     return sortTasks(filtered);
   },
@@ -127,7 +57,6 @@ export const tasksStorage = {
     const tasks = loadAll();
     tasks.push(task);
     saveAll(tasks);
-    markInitialized(assigneeId);
     return task;
   },
 

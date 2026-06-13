@@ -1,10 +1,10 @@
 import type { IncomeTaxBase, Transaction } from '../../../api/types/finance';
+import { loadJson, saveJson } from '../../../storage/persistence';
 
 const TRANSACTIONS_KEY = 'inclave-erp-finance-transactions';
 const SETTINGS_KEY = 'inclave-erp-finance-settings';
 
 export interface FinanceSettings {
-  /** Режим налогообложения: доход на прибыль */
   incomeTaxBase: IncomeTaxBase;
 }
 
@@ -13,90 +13,21 @@ function defaultSettings(): FinanceSettings {
 }
 
 function loadSettings(): FinanceSettings {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return defaultSettings();
-    return { ...defaultSettings(), ...(JSON.parse(raw) as FinanceSettings) };
-  } catch {
-    return defaultSettings();
-  }
+  const stored = loadJson<Partial<FinanceSettings> | null>(SETTINGS_KEY, null);
+  if (!stored) return defaultSettings();
+  return { ...defaultSettings(), ...stored };
 }
 
 function saveSettings(settings: FinanceSettings): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
-
-function seedTransactions(): Transaction[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const ts = now.toISOString();
-
-  const seeds: Array<Omit<Transaction, 'id' | 'createdAt'>> = [
-    {
-      type: 'income',
-      amount: 120_000,
-      currency: 'BYN',
-      accountId: 'main',
-      counterpartyAccountId: null,
-      description: 'Оплата по договору №12',
-      category: 'выручка',
-      projectId: null,
-      date: `${year}-${month}-05`,
-    },
-    {
-      type: 'income',
-      amount: 45_000,
-      currency: 'BYN',
-      accountId: 'main',
-      counterpartyAccountId: null,
-      description: 'Дополнительные услуги',
-      category: 'выручка',
-      projectId: null,
-      date: `${year}-${month}-12`,
-    },
-    {
-      type: 'expense',
-      amount: 38_000,
-      currency: 'BYN',
-      accountId: 'main',
-      counterpartyAccountId: null,
-      description: 'Зарплата штат',
-      category: 'фонд оплаты труда',
-      projectId: null,
-      date: `${year}-${month}-10`,
-    },
-    {
-      type: 'expense',
-      amount: 22_500,
-      currency: 'BYN',
-      accountId: 'main',
-      counterpartyAccountId: null,
-      description: 'Аутсорс и подряд',
-      category: 'услуги',
-      projectId: null,
-      date: `${year}-${month}-18`,
-    },
-  ];
-
-  const transactions: Transaction[] = seeds.map((item, index) => ({
-    ...item,
-    id: `seed-tx-${index + 1}`,
-    createdAt: ts,
-  }));
-
-  localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
-  return transactions;
+  saveJson(SETTINGS_KEY, settings);
 }
 
 function loadTransactions(): Transaction[] {
-  try {
-    const raw = localStorage.getItem(TRANSACTIONS_KEY);
-    if (!raw) return seedTransactions();
-    return JSON.parse(raw) as Transaction[];
-  } catch {
-    return seedTransactions();
-  }
+  return loadJson<Transaction[]>(TRANSACTIONS_KEY, []);
+}
+
+function saveTransactions(transactions: Transaction[]): void {
+  saveJson(TRANSACTIONS_KEY, transactions);
 }
 
 export const financeStorage = {
@@ -112,7 +43,7 @@ export const financeStorage = {
     };
     const transactions = loadTransactions();
     transactions.push(transaction);
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+    saveTransactions(transactions);
     return transaction;
   },
 
@@ -125,7 +56,7 @@ export const financeStorage = {
     if (index === -1) return null;
 
     transactions[index] = { ...transactions[index], ...patch };
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
+    saveTransactions(transactions);
     return transactions[index];
   },
 
@@ -133,7 +64,7 @@ export const financeStorage = {
     const transactions = loadTransactions();
     const next = transactions.filter((item) => item.id !== id);
     if (next.length === transactions.length) return false;
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(next));
+    saveTransactions(next);
     return true;
   },
 
