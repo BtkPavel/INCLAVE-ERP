@@ -47,6 +47,14 @@
   overflow: hidden;
 }
 
+.compactCell {
+  min-height: 48px;
+  height: 48px;
+  padding: 4px 2px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
 .cell:nth-child(7n) {
   border-right: none;
 }
@@ -79,6 +87,11 @@
   font-weight: 600;
 }
 
+.compactCell.today .dayNum {
+  width: 22px;
+  height: 22px;
+}
+
 .holiday .dayNum {
   color: var(--danger);
   font-weight: 600;
@@ -97,6 +110,13 @@
   flex-shrink: 0;
 }
 
+.compactCell .dayNum {
+  font-size: 11px;
+  margin-bottom: 0;
+  text-align: center;
+  width: 100%;
+}
+
 .events {
   display: flex;
   flex-direction: column;
@@ -107,84 +127,49 @@
   overflow: hidden;
 }
 
+.holidayChip {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .more {
   font-size: 10px;
   color: var(--text-muted);
   padding: 2px 6px;
 }
 
-/* На мобильных праздник — только красная дата, без длинной плашки в ячейке */
-.holidayChip {
-  min-width: 0;
-  max-width: 100%;
+.compactCell.hasEvents .dayNum::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
 }
 
-@media (max-width: 900px) {
-  .holidayChip {
-    display: none;
-  }
+/* PWA: всегда компактная сетка */
+:global(html[data-pwa='true']) .days,
+:global(html[data-pwa='true']) .weekdays {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
 
-  .cell {
-    min-height: 52px;
-    height: 52px;
-    padding: 4px 2px;
-  }
+:global(html[data-pwa='true']) .cell {
+  min-height: 48px;
+  height: 48px;
+  padding: 4px 2px;
+}
 
-  .dayNum {
-    font-size: 11px;
-    margin-bottom: 0;
-    text-align: center;
-  }
+:global(html[data-pwa='true']) .dayNum {
+  font-size: 11px;
+  margin-bottom: 0;
+  text-align: center;
+}
 
+@media (max-width: 1024px) {
   .weekday {
     padding: 8px 2px;
     font-size: 9px;
-  }
-
-  .events {
-    display: none;
-  }
-
-  .hasEvents .dayNum::after {
-    content: '';
-    display: inline-block;
-    width: 5px;
-    height: 5px;
-    margin-left: 4px;
-    border-radius: 50%;
-    background: var(--accent);
-    vertical-align: middle;
-  }
-
-  /* PWA: события в сетке месяца снова видны и нажимаются */
-  :global(html[data-pwa='true']) .events {
-    display: flex;
-  }
-
-  :global(html[data-pwa='true']) .hasEvents .dayNum::after {
-    display: none;
-  }
-
-  :global(html[data-pwa='true']) .cell {
-    min-height: 52px;
-    height: 52px;
-  }
-
-  .today .dayNum {
-    width: 22px;
-    height: 22px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .cell {
-    min-height: 52px;
-    height: 52px;
-  }
-
-  .dayNum {
-    font-size: 11px;
   }
 }

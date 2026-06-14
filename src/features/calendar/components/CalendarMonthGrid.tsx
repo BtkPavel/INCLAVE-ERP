@@ -11,6 +11,7 @@ import {
 import { EventChip } from './EventChip';
 import { HolidayChip } from './HolidayChip';
 import { TaskChip } from './TaskChip';
+import { useCompactMonthGrid } from '../hooks/useCompactMonthGrid';
 import styles from './CalendarMonthGrid.module.css';
 
 interface CalendarMonthGridProps {
@@ -39,6 +40,7 @@ export function CalendarMonthGrid({
   onTaskClick,
 }: CalendarMonthGridProps) {
   const days = getMonthGridDays(viewDate);
+  const compactGrid = useCompactMonthGrid();
 
   return (
     <div className={styles.grid}>
@@ -74,7 +76,7 @@ export function CalendarMonthGrid({
               key={date.toISOString()}
               role="button"
               tabIndex={0}
-              className={`${styles.cell} ${!inMonth ? styles.outside : ''} ${selected ? styles.selected : ''} ${today ? styles.today : ''} ${isHoliday ? styles.holiday : ''} ${hasItems ? styles.hasEvents : ''}`}
+              className={`${styles.cell} ${!inMonth ? styles.outside : ''} ${selected ? styles.selected : ''} ${today ? styles.today : ''} ${isHoliday ? styles.holiday : ''} ${hasItems ? styles.hasEvents : ''} ${compactGrid ? styles.compactCell : ''}`}
               onClick={() => onSelectDate(date)}
               onDoubleClick={() => onCreateOnDate(date)}
               onKeyDown={(e) => {
@@ -85,27 +87,29 @@ export function CalendarMonthGrid({
               }}
             >
               <span className={styles.dayNum}>{formatDayNumber(date)}</span>
-              <div className={styles.events}>
-                {holidays.map((holiday) => (
-                  <div key={holiday.id} className={styles.holidayChip}>
-                    <HolidayChip holiday={holiday} compact />
-                  </div>
-                ))}
-                {visibleTasks.map((task) => (
-                  <TaskChip key={task.id} task={task} compact onClick={onTaskClick} />
-                ))}
-                {visibleEvents.map((event) => (
-                  <EventChip
-                    key={event.id}
-                    event={event}
-                    compact
-                    onClick={onEventClick}
-                  />
-                ))}
-                {extra > 0 && (
-                  <span className={styles.more}>+{extra} ещё</span>
-                )}
-              </div>
+              {!compactGrid && (
+                <div className={styles.events}>
+                  {holidays.map((holiday) => (
+                    <div key={holiday.id} className={styles.holidayChip}>
+                      <HolidayChip holiday={holiday} compact />
+                    </div>
+                  ))}
+                  {visibleTasks.map((task) => (
+                    <TaskChip key={task.id} task={task} compact onClick={onTaskClick} />
+                  ))}
+                  {visibleEvents.map((event) => (
+                    <EventChip
+                      key={event.id}
+                      event={event}
+                      compact
+                      onClick={onEventClick}
+                    />
+                  ))}
+                  {extra > 0 && (
+                    <span className={styles.more}>+{extra} ещё</span>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
