@@ -13,6 +13,9 @@ echo "==> npm ci && build..."
 npm ci
 npm run build
 
+echo "==> API server..."
+bash deploy/setup-api.sh
+
 echo "==> Обновление статики..."
 find "$APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp -r dist/* "$APP_DIR"/

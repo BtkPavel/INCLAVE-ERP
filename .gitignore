@@ -3,6 +3,8 @@ dist/
 .env
 .env.local
 .env.*.local
+server/.env
+data/
 .DS_Store
 *.log
 .vite/

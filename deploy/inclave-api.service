@@ -1,0 +1,14 @@
+[Unit]
+Description=INCLAVE ERP API Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/inclave-erp/server
+EnvironmentFile=-/opt/inclave-erp/server/.env
+ExecStart=/usr/bin/node index.mjs
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

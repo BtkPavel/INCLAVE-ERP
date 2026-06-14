@@ -36,7 +36,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
 
-    const success = login(role, password);
+    const success = await login(role, password);
     if (!success) {
       setError('Неверный пароль. Попробуйте снова.');
       setLoading(false);
