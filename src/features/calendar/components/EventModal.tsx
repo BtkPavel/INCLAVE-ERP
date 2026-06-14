@@ -12,6 +12,7 @@ import { DatePicker } from '../../../components/DatePicker';
 import { FormSelect } from '../../../components/FormSelect';
 import { EVENT_TYPE_LABELS, EVENT_PRIORITY_LABELS, REMINDER_OPTIONS } from '../constants';
 import { parseTimeFromISO, toDateKey, toISODateTime } from '../utils/dates';
+import { ApiError } from '../../../api/errors';
 import { isPwaStandalone } from '../../../utils/pwa';
 import styles from './EventModal.module.css';
 
@@ -46,11 +47,13 @@ export function EventModal({
   const [reminderMinutes, setReminderMinutes] = useState<ReminderMinutes | null>(null);
   const [priority, setPriority] = useState<EventPriority>('medium');
   const [reminderHint, setReminderHint] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setReminderHint('');
+    setSaveError('');
     if (event) {
       setTitle(event.title);
       setType(event.type);
@@ -127,8 +130,20 @@ export function EventModal({
     };
 
     setSaving(true);
+    setSaveError('');
     try {
       await onSave(dto);
+    } catch (err) {
+      let message = 'Не удалось сохранить событие';
+      if (ApiError.isApiError(err)) {
+        message =
+          err.status === 401
+            ? 'Сессия истекла. Выйдите и войдите снова (пароль директора: inclave-dir).'
+            : err.message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      setSaveError(message);
     } finally {
       setSaving(false);
     }
@@ -265,6 +280,12 @@ export function EventModal({
               rows={3}
             />
           </label>
+
+          {saveError && (
+            <p className={styles.hint} role="alert">
+              {saveError}
+            </p>
+          )}
 
           <div className={styles.actions}>
             {event && onDelete && (

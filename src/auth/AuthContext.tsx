@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authApi } from '../api/modules/auth.api';
-import { apiClient } from '../api/client';
+import { apiClient, clearAuthToken } from '../api/client';
 import { setTasksAssignee } from '../backend/tasks/tasksService';
 import {
   authenticate,
@@ -47,13 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (apiClient.isMockMode()) return;
 
-    const session = loadSession();
-    if (session) {
-      setUser(session);
-      setTasksAssignee(session.role);
-    }
-
     if (!hasStoredToken()) {
+      clearSession();
+      clearAuthToken();
+      setUser(null);
       setAuthLoading(false);
       return;
     }
@@ -68,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         clearSession();
+        clearAuthToken();
         setUser(null);
       })
       .finally(() => setAuthLoading(false));
@@ -104,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await authApi.logout();
       } catch {
-        clearSession();
+        clearAuthToken();
       }
     } else {
       clearSession();
