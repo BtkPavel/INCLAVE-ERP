@@ -3,34 +3,39 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 .weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   border-bottom: 1px solid var(--border);
   background: var(--surface-muted);
 }
 
 .weekday {
-  padding: 10px 8px;
+  padding: 10px 4px;
   text-align: center;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .days {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .cell {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  min-width: 0;
   min-height: 100px;
   padding: 8px;
   border-right: 1px solid var(--border);
@@ -39,6 +44,7 @@
   text-align: left;
   cursor: pointer;
   transition: background 0.12s;
+  overflow: hidden;
 }
 
 .cell:nth-child(7n) {
@@ -94,8 +100,9 @@
 .events {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
 }
@@ -106,10 +113,32 @@
   padding: 2px 6px;
 }
 
+/* На мобильных праздник — только красная дата, без длинной плашки в ячейке */
+.holidayChip {
+  min-width: 0;
+  max-width: 100%;
+}
+
 @media (max-width: 900px) {
+  .holidayChip {
+    display: none;
+  }
+
   .cell {
-    min-height: 72px;
-    padding: 6px 4px;
+    min-height: 52px;
+    height: 52px;
+    padding: 4px 2px;
+  }
+
+  .dayNum {
+    font-size: 11px;
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+  .weekday {
+    padding: 8px 2px;
+    font-size: 9px;
   }
 
   .events {
@@ -137,16 +166,25 @@
   }
 
   :global(html[data-pwa='true']) .cell {
-    min-height: 64px;
+    min-height: 52px;
+    height: 52px;
+  }
+
+  .today .dayNum {
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
 @media (max-width: 480px) {
   .cell {
-    min-height: 48px;
+    min-height: 52px;
+    height: 52px;
   }
 
   .dayNum {
-    font-size: 12px;
+    font-size: 11px;
   }
 }

@@ -87,7 +87,9 @@ export function CalendarMonthGrid({
               <span className={styles.dayNum}>{formatDayNumber(date)}</span>
               <div className={styles.events}>
                 {holidays.map((holiday) => (
-                  <HolidayChip key={holiday.id} holiday={holiday} compact />
+                  <div key={holiday.id} className={styles.holidayChip}>
+                    <HolidayChip holiday={holiday} compact />
+                  </div>
                 ))}
                 {visibleTasks.map((task) => (
                   <TaskChip key={task.id} task={task} compact onClick={onTaskClick} />
