@@ -120,6 +120,17 @@
   margin-top: 4px;
 }
 
+.saveError {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.4;
+}
+
 .checkField {
   display: flex;
   align-items: center;
@@ -219,6 +230,12 @@
 :global(html[data-pwa='true']) .actions {
   flex-direction: column;
   align-items: stretch;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-elevated);
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
 :global(html[data-pwa='true']) .actionsRight {

@@ -13,6 +13,7 @@ import { FormSelect } from '../../../components/FormSelect';
 import { EVENT_TYPE_LABELS, EVENT_PRIORITY_LABELS, REMINDER_OPTIONS } from '../constants';
 import { parseTimeFromISO, toDateKey, toISODateTime } from '../utils/dates';
 import { ApiError } from '../../../api/errors';
+import { apiClient } from '../../../api/client';
 import { isPwaStandalone } from '../../../utils/pwa';
 import styles from './EventModal.module.css';
 
@@ -89,6 +90,12 @@ export function EventModal({
 
   if (!open) return null;
 
+  function scrollToError() {
+    requestAnimationFrame(() => {
+      document.getElementById('event-modal-save-error')?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
   async function handleReminderChange(value: string) {
     if (value === '') {
       setReminderMinutes(null);
@@ -108,11 +115,40 @@ export function EventModal({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    setSaveError('');
+
+    if (!apiClient.isMockMode() && !localStorage.getItem('inclave-erp-token')) {
+      setSaveError('Войдите в систему заново (пароль директора: inclave-dir)');
+      scrollToError();
+      return;
+    }
+
+    if (!title.trim()) {
+      setSaveError('Укажите название события');
+      scrollToError();
+      return;
+    }
+
+    if (!date) {
+      setSaveError('Выберите дату');
+      scrollToError();
+      return;
+    }
 
     const [sh, sm] = startTime.split(':').map(Number);
     const [eh, em] = endTime.split(':').map(Number);
-    const baseDate = new Date(date + 'T00:00:00');
+    if (!allDay && (!Number.isFinite(sh) || !Number.isFinite(eh))) {
+      setSaveError('Укажите время начала и окончания');
+      scrollToError();
+      return;
+    }
+
+    const baseDate = new Date(date + 'T12:00:00');
+    if (Number.isNaN(baseDate.getTime())) {
+      setSaveError('Некорректная дата');
+      scrollToError();
+      return;
+    }
 
     const dto: CreateEventDto = {
       title: title.trim(),
@@ -130,7 +166,6 @@ export function EventModal({
     };
 
     setSaving(true);
-    setSaveError('');
     try {
       await onSave(dto);
     } catch (err) {
@@ -144,6 +179,7 @@ export function EventModal({
         message = err.message;
       }
       setSaveError(message);
+      scrollToError();
     } finally {
       setSaving(false);
     }
@@ -179,7 +215,7 @@ export function EventModal({
           </button>
         </header>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <label className={styles.field}>
             <span className={styles.label}>Название</span>
             <input
@@ -187,7 +223,6 @@ export function EventModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Совещание, дедлайн…"
-              required
               autoFocus={!skipAutoFocus}
             />
           </label>
@@ -205,7 +240,7 @@ export function EventModal({
 
           <label className={styles.field}>
             <span className={styles.label}>Дата</span>
-            <DatePicker value={date} onChange={setDate} required />
+            <DatePicker value={date} onChange={setDate} />
           </label>
 
           <label className={styles.checkField}>
@@ -226,7 +261,6 @@ export function EventModal({
                   className={styles.input}
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  required
                 />
               </label>
               <label className={styles.field}>
@@ -236,7 +270,6 @@ export function EventModal({
                   className={styles.input}
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  required
                 />
               </label>
             </div>
@@ -282,7 +315,7 @@ export function EventModal({
           </label>
 
           {saveError && (
-            <p className={styles.hint} role="alert">
+            <p id="event-modal-save-error" className={styles.saveError} role="alert">
               {saveError}
             </p>
           )}

@@ -5,6 +5,7 @@ import type { Task } from '../../../api/types/tasks';
 import { calendarApi } from '../../../api/modules/calendar.api';
 import { tasksApi } from '../../../api/modules/tasks.api';
 import { apiClient } from '../../../api/client';
+import { ApiError } from '../../../api/errors';
 import { useAuth } from '../../../auth/AuthContext';
 import { setTasksAssignee } from '../../../backend/tasks/tasksService';
 import { clearReminderForEvent, scheduleReminderCheck } from '../reminders/eventReminders';
@@ -262,12 +263,24 @@ export function useCalendar() {
   }
 
   async function saveEvent(dto: CreateEventDto) {
+    if (!apiClient.isMockMode() && !localStorage.getItem('inclave-erp-token')) {
+      throw new ApiError(401, {
+        code: 'UNAUTHORIZED',
+        message: 'Войдите в систему заново (пароль директора: inclave-dir)',
+      });
+    }
+
     if (editingEvent) {
       clearReminderForEvent(editingEvent.id);
       await calendarApi.updateEvent(editingEvent.id, dto);
     } else {
       await calendarApi.createEvent(dto);
     }
+
+    const eventDay = startOfDay(new Date(dto.startAt));
+    setViewDate(eventDay);
+    setSelectedDate(eventDay);
+
     closeModal();
     await loadCalendarData();
   }
