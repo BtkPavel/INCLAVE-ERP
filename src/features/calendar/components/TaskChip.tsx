@@ -1,5 +1,6 @@
 import type { Task } from '../../../api/types/tasks';
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../../tasks/constants';
+import { TASK_STATUS_LABELS } from '../../tasks/constants';
+import { TaskPriorityBadge } from '../../tasks/components/TaskPriorityBadge';
 import styles from './TaskChip.module.css';
 
 interface TaskChipProps {
@@ -17,9 +18,7 @@ export function TaskChip({ task, compact, static: isStatic, onClick }: TaskChipP
     <>
       <span className={styles.badge}>☑</span>
       <span className={styles.title}>{task.title}</span>
-      {!compact && (
-        <span className={styles.meta}>{TASK_PRIORITY_LABELS[task.priority]}</span>
-      )}
+      {!compact && <TaskPriorityBadge priority={task.priority} className={styles.priority} />}
     </>
   );
 

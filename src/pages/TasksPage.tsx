@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Task, TaskStatus } from '../api/types/tasks';
 import { useAuth } from '../auth/AuthContext';
 import { setTasksAssignee } from '../backend/tasks/tasksService';
 import { TaskForm } from '../features/tasks/components/TaskForm';
 import { TaskList } from '../features/tasks/components/TaskList';
 import { TASK_FILTER_OPTIONS } from '../features/tasks/constants';
-import { useTaskActions, useTasks, useTaskStats } from '../hooks/useModuleApi';
+import { useTaskActions, useTasks, useTaskStats, useProjects } from '../hooks/useModuleApi';
 import styles from './TasksPage.module.css';
 import pageStyles from './ModulePage.module.css';
 
@@ -24,6 +24,12 @@ export function TasksPage() {
   const statusFilter = filter === 'all' ? undefined : filter;
   const tasksState = useTasks(version, statusFilter);
   const statsState = useTaskStats(version);
+  const projectsState = useProjects();
+
+  const projectNames = useMemo(() => {
+    if (projectsState.status !== 'success') return {};
+    return Object.fromEntries(projectsState.data.data.map((p) => [p.id, p.name]));
+  }, [projectsState]);
 
   const tasks =
     tasksState.status === 'success' ? tasksState.data.data : [];
@@ -36,7 +42,7 @@ export function TasksPage() {
         <h1 className={pageStyles.title}>Задачи</h1>
         <p className={pageStyles.subtitle}>
           {user
-            ? `Личные задачи для ${user.name.toLowerCase()}: ставьте себе дела, сроки и приоритеты`
+            ? `Задачи для ${user.name.toLowerCase()}: личные дела или работа по проектам`
             : 'Постановка и контроль исполнения задач'}
         </p>
       </header>
@@ -106,6 +112,7 @@ export function TasksPage() {
       ) : (
         <TaskList
           tasks={tasks}
+          projectNames={projectNames}
           emptyText="Задач пока нет — создайте первую задачу выше"
           onComplete={complete}
           onStatusChange={(id, status) => update(id, { status })}

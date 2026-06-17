@@ -1,0 +1,55 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  height: 100%;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.colLabel {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.card {
+  height: 14px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+.column:nth-child(2) .card {
+  background: color-mix(in srgb, #3d9a8b 14%, transparent);
+  border-color: color-mix(in srgb, #3d9a8b 25%, transparent);
+}
+
+.column:nth-child(3) .card {
+  opacity: 0.55;
+}
+
+.barTodo {
+  background: #5e6ad2;
+}
+
+.barDone {
+  background: #3d9a8b;
+}

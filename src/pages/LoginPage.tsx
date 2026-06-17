@@ -7,6 +7,7 @@ import {
   showWelcomeNotification,
 } from '../notifications/notifications';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { AiAssistantButton } from '../components/AiAssistantButton';
 import styles from './LoginPage.module.css';
 
 const ROLES: { id: UserRole; label: string; description: string }[] = [
@@ -36,9 +37,9 @@ export function LoginPage() {
     setError('');
     setLoading(true);
 
-    const success = await login(role, password);
-    if (!success) {
-      setError('Неверный пароль. Попробуйте снова.');
+    const result = await login(role, password);
+    if (!result.ok) {
+      setError(result.error);
       setLoading(false);
       return;
     }
@@ -56,6 +57,7 @@ export function LoginPage() {
     <div className={styles.page}>
       <div className={styles.topBar}>
         <ThemeToggle />
+        <AiAssistantButton />
       </div>
       <div className={styles.glow} aria-hidden />
       <div className={styles.container}>

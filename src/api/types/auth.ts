@@ -21,3 +21,10 @@ export interface AuthSession {
   user: AuthUserResponse;
   tokens: AuthTokenResponse;
 }
+
+export interface SystemUser {
+  id: string;
+  role: UserRole;
+  name: string;
+  title: string;
+}

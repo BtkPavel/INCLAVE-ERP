@@ -79,34 +79,6 @@
   color: var(--text-primary);
 }
 
-.priority {
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.priority_low {
-  color: var(--text-secondary);
-  background: var(--surface-hover);
-}
-
-.priority_medium {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-.priority_high {
-  color: #c27803;
-  background: color-mix(in srgb, #f5a623 18%, transparent);
-}
-
-.priority_urgent {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-}
-
 .description {
   font-size: 13px;
   color: var(--text-secondary);
@@ -120,6 +92,23 @@
   gap: 10px;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.personalTag,
+.projectTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.personalTag {
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+
+.projectTag {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
 }
 
 .overdue {

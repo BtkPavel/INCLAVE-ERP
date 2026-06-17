@@ -10,15 +10,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="INCLAVE" />
-    <link rel="apple-touch-icon" href="http://87.199.192.18/icons/inclave-180.png" />
-    <link rel="apple-touch-icon" sizes="120x120" href="http://87.199.192.18/icons/inclave-120.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="http://87.199.192.18/icons/inclave-152.png" />
-    <link rel="apple-touch-icon" sizes="167x167" href="http://87.199.192.18/icons/inclave-167.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="http://87.199.192.18/icons/inclave-180.png" />
-    <link rel="icon" href="http://87.199.192.18/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" sizes="32x32" href="http://87.199.192.18/icons/inclave-32.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="http://87.199.192.18/icons/inclave-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="http://87.199.192.18/icons/inclave-512.png" />
+    <link rel="apple-touch-icon" href="/icons/inclave-180.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/inclave-120.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/inclave-152.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/inclave-167.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/inclave-180.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/inclave-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/inclave-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/inclave-512.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,23 +36,6 @@
     </script>
   </head>
   <body>
-    <div
-      id="ios-https-hint"
-      hidden
-      style="position:fixed;inset:0 auto auto 0;right:0;z-index:9999;padding:12px 14px;background:#7a1f1f;color:#fff;font:14px/1.4 -apple-system,sans-serif;text-align:center"
-    >
-      Для иконки на экране «Домой» откройте
-      <a href="http://87.199.192.18/" style="color:#fff;font-weight:700">http://87.199.192.18</a>
-      (не https)
-    </div>
-    <script>
-      if (
-        location.protocol === 'https:' &&
-        /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ) {
-        document.getElementById('ios-https-hint').hidden = false;
-      }
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

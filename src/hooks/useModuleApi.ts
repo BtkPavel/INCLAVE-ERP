@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useApiResource } from './useApiResource';
 import { projectsApi } from '../api/modules/projects.api';
 import { calendarApi } from '../api/modules/calendar.api';
@@ -11,8 +11,35 @@ import type { TaskStatus } from '../api/types/tasks';
 import type { PaginatedResponse } from '../api/types/common';
 import type { ISODate } from '../api/types/common';
 
-export function useProjects() {
-  return useApiResource(useCallback(() => projectsApi.list(), []));
+import type { ProjectCategory } from '../api/types/projects';
+
+export function useProjects(category?: ProjectCategory, version = 0) {
+  return useApiResource(
+    useCallback(() => projectsApi.list(category ? { category } : undefined), [category, version]),
+  );
+}
+
+export function useProjectActions() {
+  const [version, setVersion] = useState(0);
+  const bump = () => setVersion((v) => v + 1);
+
+  return {
+    version,
+    async create(dto: Parameters<typeof projectsApi.create>[0]) {
+      const result = await projectsApi.create(dto);
+      bump();
+      return result;
+    },
+    async update(id: string, dto: Parameters<typeof projectsApi.update>[1]) {
+      const result = await projectsApi.update(id, dto);
+      bump();
+      return result;
+    },
+    async remove(id: string) {
+      await projectsApi.delete(id);
+      bump();
+    },
+  };
 }
 
 export function useProjectStats() {
@@ -39,6 +66,12 @@ export function useTaskStats(version = 0) {
 export function useTaskActions() {
   const [version, setVersion] = useState(0);
   const bump = () => setVersion((v) => v + 1);
+
+  useEffect(() => {
+    const handler = () => bump();
+    window.addEventListener('inclave-assistant-action', handler);
+    return () => window.removeEventListener('inclave-assistant-action', handler);
+  }, []);
 
   return {
     version,

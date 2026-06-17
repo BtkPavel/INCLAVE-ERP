@@ -1,0 +1,74 @@
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  height: 100%;
+  align-items: end;
+}
+
+.dayCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dayColToday {
+  gap: 4px;
+}
+
+.weekday {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dayColToday .weekday {
+  color: var(--accent);
+}
+
+.dayCircle {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.dayCircleToday {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.eventMark {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.eventMark[data-active='true'] {
+  background: #5e6ad2;
+}
+
+.dayColToday .eventMark[data-active='true'] {
+  background: color-mix(in srgb, #fff 85%, var(--accent));
+}
+
+.footerMeeting {
+  background: #5e6ad2;
+}
+
+.footerDeadline {
+  background: #d70510;
+}

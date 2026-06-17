@@ -16,6 +16,15 @@ const USERS = {
   },
 };
 
+export function listUsers() {
+  return Object.entries(USERS).map(([role, user]) => ({
+    id: role,
+    role,
+    name: user.name,
+    title: user.title,
+  }));
+}
+
 export function authenticate(role, password) {
   const user = USERS[role];
   if (!user || user.password !== password) return null;

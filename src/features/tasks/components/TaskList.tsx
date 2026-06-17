@@ -1,10 +1,12 @@
 import type { Task, TaskStatus } from '../../../api/types/tasks';
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../constants';
+import { TASK_STATUS_LABELS } from '../constants';
+import { TaskPriorityBadge } from './TaskPriorityBadge';
 import styles from './TaskList.module.css';
 
 interface TaskListProps {
   tasks: Task[];
   emptyText: string;
+  projectNames?: Record<string, string>;
   onComplete: (id: string) => void;
   onStatusChange: (id: string, status: TaskStatus) => void;
   onEdit: (task: Task) => void;
@@ -21,6 +23,7 @@ function isOverdue(task: Task): boolean {
 export function TaskList({
   tasks,
   emptyText,
+  projectNames = {},
   onComplete,
   onStatusChange,
   onEdit,
@@ -57,15 +60,18 @@ export function TaskList({
             <div className={styles.main}>
               <div className={styles.titleRow}>
                 <h3 className={styles.title}>{task.title}</h3>
-                <span className={`${styles.priority} ${styles[`priority_${task.priority}`]}`}>
-                  {TASK_PRIORITY_LABELS[task.priority]}
-                </span>
+                <TaskPriorityBadge priority={task.priority} />
               </div>
 
               {task.description && <p className={styles.description}>{task.description}</p>}
 
               <div className={styles.meta}>
                 <span>{TASK_STATUS_LABELS[task.status]}</span>
+                <span className={task.projectId ? styles.projectTag : styles.personalTag}>
+                  {task.projectId
+                    ? projectNames[task.projectId] ?? 'Проект'
+                    : 'Личная'}
+                </span>
                 {task.dueDate && (
                   <span className={overdue ? styles.overdue : undefined}>
                     до {new Date(task.dueDate).toLocaleDateString('ru-RU')}

@@ -8,6 +8,8 @@ import type {
   ProjectStats,
   UpdateProjectDto,
 } from '../types/projects';
+import type { CreateSprintDto, Sprint } from '../types/sprints';
+import type { Task } from '../types/tasks';
 import { apiClient, apiMocks } from '../client';
 import type { QueryParams } from '../client';
 import { buildUrl } from '../architecture';
@@ -65,5 +67,27 @@ export const projectsApi = {
       });
     }
     return apiClient.get(buildUrl('projects', 'stats'));
+  },
+
+  listTasks(projectId: string, sprintId?: string): Promise<{ data: Task[] }> {
+    return apiClient.get(`${BASE}/${projectId}/tasks`, {
+      params: sprintId ? { sprintId } : undefined,
+    });
+  },
+
+  listSprints(projectId: string): Promise<{ data: Sprint[] }> {
+    return apiClient.get(`${BASE}/${projectId}/sprints`);
+  },
+
+  createSprint(projectId: string, dto?: CreateSprintDto): Promise<{ data: Sprint }> {
+    return apiClient.post(`${BASE}/${projectId}/sprints`, dto ?? {});
+  },
+
+  startSprint(projectId: string, sprintId: string): Promise<{ data: Sprint }> {
+    return apiClient.post(`${BASE}/${projectId}/sprints/${sprintId}/start`);
+  },
+
+  completeSprint(projectId: string, sprintId: string): Promise<{ data: Sprint }> {
+    return apiClient.post(`${BASE}/${projectId}/sprints/${sprintId}/complete`);
   },
 };

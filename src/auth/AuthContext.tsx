@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { authApi } from '../api/modules/auth.api';
 import { apiClient, clearAuthToken } from '../api/client';
+import { ApiError } from '../api/errors';
 import { setTasksAssignee } from '../backend/tasks/tasksService';
 import {
   authenticate,
@@ -19,10 +20,14 @@ import {
   type UserRole,
 } from './users';
 
+export type LoginResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
 interface AuthContextValue {
   user: User | null;
   authLoading: boolean;
-  login: (role: UserRole, password: string) => Promise<boolean>;
+  login: (role: UserRole, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
 }
 
@@ -71,14 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setAuthLoading(false));
   }, []);
 
-  const login = useCallback(async (role: UserRole, password: string) => {
+  const login = useCallback(async (role: UserRole, password: string): Promise<LoginResult> => {
     if (apiClient.isMockMode()) {
       const authenticated = authenticate(role, password);
-      if (!authenticated) return false;
+      if (!authenticated) return { ok: false, error: 'Неверный пароль' };
       saveSession(authenticated);
       setUser(authenticated);
       setTasksAssignee(authenticated.role);
-      return true;
+      return { ok: true };
     }
 
     try {
@@ -91,9 +96,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveSession(next);
       setUser(next);
       setTasksAssignee(next.role);
-      return true;
-    } catch {
-      return false;
+      return { ok: true };
+    } catch (err) {
+      if (ApiError.isApiError(err)) {
+        if (err.status === 401) {
+          return { ok: false, error: 'Неверный пароль' };
+        }
+        if (err.status === 0) {
+          return {
+            ok: false,
+            error: 'Нет связи с сервером. Откройте https://erp-inclave.pro',
+          };
+        }
+        return { ok: false, error: err.message };
+      }
+      return {
+        ok: false,
+        error: 'Нет связи с сервером. Откройте https://erp-inclave.pro',
+      };
     }
   }, []);
 

@@ -1,0 +1,30 @@
+.page {
+  padding-top: 4px;
+}
+
+.backLink {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--accent);
+}
+
+.status,
+.error {
+  padding: 32px 20px;
+  text-align: center;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.error {
+  color: #c44;
+}

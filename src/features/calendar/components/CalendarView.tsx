@@ -30,6 +30,12 @@ export function CalendarView() {
         onCreate={() => calendar.openCreate()}
       />
 
+      {calendar.saveNotice && (
+        <p className={styles.saveNotice} role="status">
+          {calendar.saveNotice}
+        </p>
+      )}
+
       <div className={styles.legend}>
         <p className={styles.legendItem}>
           <span className={`${styles.legendDot} ${styles.legendHoliday}`} aria-hidden />

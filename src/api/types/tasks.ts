@@ -10,6 +10,7 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   projectId: Id | null;
+  sprintId: Id | null;
   assigneeId: Id | null;
   dueDate: ISODate | null;
   completedAt: string | null;
@@ -37,7 +38,8 @@ export interface CreateTaskDto {
   description?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
-  projectId?: Id;
+  projectId?: Id | null;
+  sprintId?: Id | null;
   assigneeId?: Id;
   dueDate?: ISODate;
 }

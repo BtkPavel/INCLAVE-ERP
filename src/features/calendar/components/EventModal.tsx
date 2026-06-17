@@ -118,7 +118,7 @@ export function EventModal({
     setSaveError('');
 
     if (!apiClient.isMockMode() && !localStorage.getItem('inclave-erp-token')) {
-      setSaveError('Войдите в систему заново (пароль директора: inclave-dir)');
+      setSaveError('Войдите в систему заново');
       scrollToError();
       return;
     }
@@ -171,10 +171,13 @@ export function EventModal({
     } catch (err) {
       let message = 'Не удалось сохранить событие';
       if (ApiError.isApiError(err)) {
-        message =
-          err.status === 401
-            ? 'Сессия истекла. Выйдите и войдите снова (пароль директора: inclave-dir).'
-            : err.message;
+        if (err.status === 401) {
+          message = 'Сессия истекла. Выйдите и войдите снова.';
+        } else if (err.status === 0) {
+          message = 'Нет связи с сервером. Откройте https://erp-inclave.pro';
+        } else {
+          message = err.message;
+        }
       } else if (err instanceof Error) {
         message = err.message;
       }

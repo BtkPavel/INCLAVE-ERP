@@ -1,12 +1,16 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { ThemeProvider } from './theme/ThemeContext';
+import { AiAssistantProvider } from './features/assistant/AiAssistantContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CalendarPage } from './pages/CalendarPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { ProjectsInvestmentPage } from './pages/ProjectsInvestmentPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
+import { ProjectsCurrentPage } from './pages/ProjectsCurrentPage';
 import { FinancePage } from './pages/FinancePage';
 import { FinanceExpensePage } from './pages/FinanceExpensePage';
 import { FinanceIncomePage } from './pages/FinanceIncomePage';
@@ -28,7 +32,14 @@ function AppRoutes() {
             <Layout>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects" element={<ProjectsPage />}>
+                  <Route path="invest/:projectId" element={<ProjectDetailPage category="investment" />} />
+                  <Route path="current/:projectId" element={<ProjectDetailPage category="current" />} />
+                  <Route path="invest" element={<ProjectsInvestmentPage />} />
+                  <Route path="current" element={<ProjectsCurrentPage />} />
+                  <Route path="investment" element={<Navigate to="/projects/invest" replace />} />
+                  <Route path="development" element={<Navigate to="/projects/current" replace />} />
+                </Route>
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/finance" element={<FinancePage />}>
@@ -55,9 +66,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <AiAssistantProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AiAssistantProvider>
       </AuthProvider>
     </ThemeProvider>
   );

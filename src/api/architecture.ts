@@ -50,6 +50,7 @@ export const API_MODULES = {
       login: ep('POST', '/login', 'Вход по роли и паролю'),
       logout: ep('POST', '/logout', 'Завершение сессии'),
       me: ep('GET', '/me', 'Текущий пользователь'),
+      users: ep('GET', '/users', 'Пользователи с доступом к системе'),
       refresh: ep('POST', '/refresh', 'Обновление токена'),
     },
   },
@@ -139,6 +140,17 @@ export const API_MODULES = {
       create: ep('POST', '/employees', 'Добавление сотрудника'),
       update: ep('PATCH', '/employees/:id', 'Обновление сотрудника'),
       delete: ep('DELETE', '/employees/:id', 'Удаление сотрудника'),
+      stats: ep('GET', '/stats', 'Сводная статистика по сотрудникам'),
+    },
+  },
+
+  assistant: {
+    name: 'assistant',
+    basePath: `${API_PREFIX}/assistant`,
+    description: 'AI-ассистент (Cursor)',
+    endpoints: {
+      chat: ep('POST', '/chat', 'Диалог с ассистентом'),
+      reset: ep('POST', '/reset', 'Сброс сессии Cursor'),
     },
   },
 } as const satisfies Record<string, ApiModuleDefinition>;

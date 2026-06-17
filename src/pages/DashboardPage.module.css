@@ -125,25 +125,11 @@
 .cardPlaceholder {
   aspect-ratio: 16 / 10;
   border-radius: 8px;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
   margin-bottom: 16px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  width: 60%;
-}
-
-.cardGrid div {
-  aspect-ratio: 1;
-  border-radius: 4px;
-  background: var(--surface-hover);
+  align-items: stretch;
+  justify-content: stretch;
+  overflow: hidden;
 }
 
 .cardTitle {

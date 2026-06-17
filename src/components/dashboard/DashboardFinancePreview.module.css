@@ -1,0 +1,64 @@
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.label {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.value {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.bar_income {
+  background: #3d9a8b;
+}
+
+.bar_expense {
+  background: #d70510;
+}
+
+.bar_profit {
+  background: #c27803;
+}
+
+.barIncome {
+  background: #3d9a8b;
+}
+
+.barExpense {
+  background: #d70510;
+}

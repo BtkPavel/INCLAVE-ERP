@@ -1,9 +1,17 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
-import { authenticate, authMiddleware, signToken } from './auth.mjs';
+import { authenticate, authMiddleware, listUsers, signToken } from './auth.mjs';
 import { KEYS, loadJson, saveJson } from './db.mjs';
 import { buildPaymentCalendar, buildProfitTaxRecord, buildSummary } from './finance.mjs';
+import { buildHrStats, filterEmployees, loadEmployees as loadHrEmployees } from './hr.mjs';
+import {
+  applySprintNumber,
+  createSprintPayload,
+  nextSprintNumber,
+  sprintsForProject,
+} from './sprints.mjs';
+import { runAssistantChat, clearStoredAgent } from './assistant.mjs';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -51,6 +59,10 @@ app.post('/api/v1/auth/logout', authMiddleware, (_req, res) => {
 
 app.get('/api/v1/auth/me', authMiddleware, (req, res) => {
   res.json({ data: { role: req.user.role, name: req.user.name, title: req.user.title } });
+});
+
+app.get('/api/v1/auth/users', authMiddleware, (_req, res) => {
+  res.json({ data: listUsers() });
 });
 
 // ─── Calendar ───────────────────────────────────────────────────────────────
@@ -146,6 +158,316 @@ app.delete('/api/v1/calendar/events/:id', authMiddleware, (req, res) => {
   res.status(204).end();
 });
 
+// ─── Projects ───────────────────────────────────────────────────────────────
+
+function loadProjects() {
+  return loadJson(KEYS.projects, []);
+}
+
+function saveProjects(projects) {
+  saveJson(KEYS.projects, projects);
+}
+
+function filterProjects(projects, { category, status } = {}) {
+  return projects.filter((project) => {
+    if (category && project.category !== category) return false;
+    if (status && project.status !== status) return false;
+    return true;
+  });
+}
+
+const PROJECT_METHODOLOGIES = new Set(['scrum', 'waterfall', 'kanban', 'hybrid']);
+
+function projectCodeFromName(name) {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  const prefix = parts.map((p) => [...p][0]?.toUpperCase() ?? '').join('').slice(0, 4) || 'PRJ';
+  const suffix = Date.now().toString(36).slice(-4).toUpperCase();
+  return `${prefix}-${suffix}`;
+}
+
+function normalizeMembers(members) {
+  if (!Array.isArray(members)) return [];
+  return members
+    .filter((m) => m && (m.userId || m.employeeId) && m.name)
+    .map((m) => ({
+      userId: String(m.userId ?? m.employeeId).trim(),
+      name: String(m.name).trim(),
+      role: String(m.role ?? '').trim() || 'Участник',
+    }));
+}
+
+function normalizeProject(project) {
+  return {
+    ...project,
+    methodology: PROJECT_METHODOLOGIES.has(project.methodology) ? project.methodology : 'waterfall',
+    sprintWeeks: project.sprintWeeks ?? null,
+    members: normalizeMembers(project.members),
+    requiredInvestments: project.requiredInvestments ?? null,
+    budget: project.budget ?? null,
+    createdBy: project.createdBy ?? project.managerId ?? null,
+  };
+}
+
+function canManageProject(user, project) {
+  return user.role === 'director' || project.createdBy === user.role;
+}
+
+function loadSprints() {
+  return loadJson(KEYS.sprints, []);
+}
+
+function saveSprints(sprints) {
+  saveJson(KEYS.sprints, sprints);
+}
+
+function findProject(id) {
+  return loadNormalizedProjects().find((p) => p.id === id) ?? null;
+}
+
+function loadNormalizedProjects() {
+  return loadProjects().map(normalizeProject);
+}
+
+app.get('/api/v1/projects/stats', authMiddleware, (_req, res) => {
+  const projects = loadNormalizedProjects();
+  res.json({
+    data: {
+      total: projects.length,
+      active: projects.filter((p) => p.status === 'active').length,
+      completed: projects.filter((p) => p.status === 'completed').length,
+      onHold: projects.filter((p) => p.status === 'on_hold').length,
+    },
+  });
+});
+
+app.get('/api/v1/projects', authMiddleware, (req, res) => {
+  const { category, status, page, perPage } = req.query;
+  const items = filterProjects(loadNormalizedProjects(), { category, status });
+  res.json(paginate(items, Number(page) || 1, Number(perPage) || 50));
+});
+
+app.get('/api/v1/projects/:id', authMiddleware, (req, res) => {
+  const project = loadNormalizedProjects().find((p) => p.id === req.params.id);
+  if (!project) return notFound(res);
+  res.json({ data: project });
+});
+
+app.post('/api/v1/projects', authMiddleware, (req, res) => {
+  if (req.user.role !== 'director') {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Создавать проекты может только директор' });
+    return;
+  }
+
+  const dto = req.body ?? {};
+  const name = String(dto.name ?? '').trim();
+  if (!name) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Название проекта обязательно' });
+    return;
+  }
+
+  const category = dto.category === 'current' ? 'current' : 'investment';
+  const methodology = PROJECT_METHODOLOGIES.has(dto.methodology) ? dto.methodology : 'waterfall';
+  const sprintWeeks =
+    methodology === 'scrum' || methodology === 'hybrid'
+      ? Number(dto.sprintWeeks) || 2
+      : null;
+
+  if (category === 'investment' && (dto.requiredInvestments == null || dto.requiredInvestments === '')) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Для инвест-проекта укажите требуемые инвестиции' });
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const project = normalizeProject({
+    id: crypto.randomUUID(),
+    name,
+    code: String(dto.code ?? '').trim() || projectCodeFromName(name),
+    description: dto.description?.trim() || null,
+    category,
+    status: dto.status ?? 'active',
+    methodology,
+    sprintWeeks,
+    startDate: dto.startDate ?? null,
+    endDate: dto.endDate ?? null,
+    budget: dto.budget != null && dto.budget !== '' ? Number(dto.budget) : null,
+    requiredInvestments:
+      dto.requiredInvestments != null && dto.requiredInvestments !== ''
+        ? Number(dto.requiredInvestments)
+        : null,
+    members: normalizeMembers(dto.members),
+    managerId: dto.managerId ?? req.user.role,
+    createdBy: req.user.role,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const projects = loadProjects();
+  projects.push(project);
+  saveProjects(projects);
+  res.status(201).json({ data: project });
+});
+
+app.patch('/api/v1/projects/:id', authMiddleware, (req, res) => {
+  const projects = loadProjects();
+  const idx = projects.findIndex((p) => p.id === req.params.id);
+  if (idx === -1) return notFound(res);
+  const current = normalizeProject(projects[idx]);
+  if (!canManageProject(req.user, current)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Редактировать проект может только директор или создатель' });
+    return;
+  }
+  const dto = req.body ?? {};
+  const methodology = dto.methodology
+    ? PROJECT_METHODOLOGIES.has(dto.methodology)
+      ? dto.methodology
+      : current.methodology
+    : current.methodology;
+  const sprintWeeks =
+    dto.sprintWeeks !== undefined
+      ? dto.sprintWeeks != null
+        ? Number(dto.sprintWeeks)
+        : null
+      : methodology === 'scrum' || methodology === 'hybrid'
+        ? current.sprintWeeks ?? 2
+        : null;
+
+  projects[idx] = normalizeProject({
+    ...current,
+    ...dto,
+    name: dto.name?.trim() ?? current.name,
+    code: dto.code?.trim() ?? current.code,
+    description: dto.description !== undefined ? dto.description.trim() || null : current.description,
+    category:
+      dto.category === 'current' || dto.category === 'investment' ? dto.category : current.category,
+    methodology,
+    sprintWeeks,
+    members: dto.members !== undefined ? normalizeMembers(dto.members) : current.members,
+    budget: dto.budget !== undefined ? (dto.budget != null ? Number(dto.budget) : null) : current.budget,
+    requiredInvestments:
+      dto.requiredInvestments !== undefined
+        ? dto.requiredInvestments != null
+          ? Number(dto.requiredInvestments)
+          : null
+        : current.requiredInvestments,
+    updatedAt: new Date().toISOString(),
+  });
+  saveProjects(projects);
+  res.json({ data: projects[idx] });
+});
+
+app.delete('/api/v1/projects/:id', authMiddleware, (req, res) => {
+  const projects = loadProjects();
+  const project = projects.find((p) => p.id === req.params.id);
+  if (!project) return notFound(res);
+  if (!canManageProject(req.user, normalizeProject(project))) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Удалять проект может только директор или создатель' });
+    return;
+  }
+  const next = projects.filter((p) => p.id !== req.params.id);
+  saveProjects(next);
+  const sprints = loadSprints().filter((s) => s.projectId !== req.params.id);
+  saveSprints(sprints);
+  res.status(204).end();
+});
+
+app.get('/api/v1/projects/:id/tasks', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+
+  const { sprintId } = req.query;
+  let tasks = loadTasks().filter((t) => t.projectId === project.id);
+  if (req.user.role !== 'director') {
+    tasks = tasks.filter((t) => t.assigneeId === req.user.role);
+  }
+  if (sprintId === 'backlog') {
+    tasks = tasks.filter((t) => !t.sprintId);
+  } else if (sprintId) {
+    tasks = tasks.filter((t) => t.sprintId === sprintId);
+  }
+  res.json({ data: sortTasks(tasks) });
+});
+
+app.get('/api/v1/projects/:id/sprints', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+  res.json({ data: sprintsForProject(loadSprints(), project.id) });
+});
+
+app.post('/api/v1/projects/:id/sprints', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+
+  const dto = req.body ?? {};
+  const sprints = loadSprints();
+  const number = nextSprintNumber(sprints, project.id);
+  const draft = createSprintPayload({
+    projectId: project.id,
+    project,
+    goal: dto.goal,
+    startDate: dto.startDate,
+  });
+  const sprint = applySprintNumber(draft, number);
+  sprints.push(sprint);
+  saveSprints(sprints);
+  res.status(201).json({ data: sprint });
+});
+
+app.patch('/api/v1/projects/:id/sprints/:sprintId', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+
+  const sprints = loadSprints();
+  const idx = sprints.findIndex((s) => s.id === req.params.sprintId && s.projectId === project.id);
+  if (idx === -1) return notFound(res);
+
+  const dto = req.body ?? {};
+  sprints[idx] = {
+    ...sprints[idx],
+    ...dto,
+    goal: dto.goal?.trim() ?? sprints[idx].goal,
+    updatedAt: new Date().toISOString(),
+  };
+  saveSprints(sprints);
+  res.json({ data: sprints[idx] });
+});
+
+app.post('/api/v1/projects/:id/sprints/:sprintId/start', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+
+  const sprints = loadSprints();
+  const idx = sprints.findIndex((s) => s.id === req.params.sprintId && s.projectId === project.id);
+  if (idx === -1) return notFound(res);
+
+  const hasActive = sprints.some((s) => s.projectId === project.id && s.status === 'active');
+  if (hasActive) {
+    res.status(409).json({ code: 'CONFLICT', message: 'Уже есть активный спринт. Завершите его перед запуском нового.' });
+    return;
+  }
+
+  for (let i = 0; i < sprints.length; i += 1) {
+    if (sprints[i].projectId === project.id && sprints[i].status === 'active') {
+      sprints[i] = { ...sprints[i], status: 'completed', updatedAt: new Date().toISOString() };
+    }
+  }
+  sprints[idx] = { ...sprints[idx], status: 'active', updatedAt: new Date().toISOString() };
+  saveSprints(sprints);
+  res.json({ data: sprints[idx] });
+});
+
+app.post('/api/v1/projects/:id/sprints/:sprintId/complete', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+
+  const sprints = loadSprints();
+  const idx = sprints.findIndex((s) => s.id === req.params.sprintId && s.projectId === project.id);
+  if (idx === -1) return notFound(res);
+
+  sprints[idx] = { ...sprints[idx], status: 'completed', updatedAt: new Date().toISOString() };
+  saveSprints(sprints);
+  res.json({ data: sprints[idx] });
+});
+
 // ─── Tasks ──────────────────────────────────────────────────────────────────
 
 function loadTasks() {
@@ -219,6 +541,7 @@ app.post('/api/v1/tasks', authMiddleware, (req, res) => {
     status: dto.status ?? 'todo',
     priority: dto.priority ?? 'medium',
     projectId: dto.projectId ?? null,
+    sprintId: dto.sprintId ?? null,
     assigneeId: req.user.role,
     dueDate: dto.dueDate ?? null,
     completedAt: null,
@@ -250,6 +573,8 @@ app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
     title: dto.title?.trim() ?? current.title,
     description: dto.description !== undefined ? dto.description.trim() || null : current.description,
     status: nextStatus,
+    projectId: dto.projectId !== undefined ? dto.projectId : current.projectId,
+    sprintId: dto.sprintId !== undefined ? dto.sprintId : current.sprintId,
     completedAt,
     updatedAt: new Date().toISOString(),
   };
@@ -433,6 +758,132 @@ app.get('/api/v1/finance/payment-calendar', authMiddleware, (req, res) => {
   }
   const data = buildPaymentCalendar(loadExpenses(), { from, to });
   res.json({ data });
+});
+
+// ─── HR (Кадры) ─────────────────────────────────────────────────────────────
+
+function loadEmployees() {
+  return loadHrEmployees(loadJson, KEYS.employees);
+}
+
+function saveEmployees(employees) {
+  saveJson(KEYS.employees, employees);
+}
+
+app.get('/api/v1/hr/employees', authMiddleware, (req, res) => {
+  const { employmentType, department, status, search, page, perPage } = req.query;
+  const items = filterEmployees(loadEmployees(), {
+    employmentType,
+    department,
+    status,
+    search,
+  });
+  res.json(paginate(items, Number(page) || 1, Number(perPage) || 100));
+});
+
+app.get('/api/v1/hr/stats', authMiddleware, (_req, res) => {
+  res.json({ data: buildHrStats(loadEmployees()) });
+});
+
+app.get('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
+  const employee = loadEmployees().find((e) => e.id === req.params.id);
+  if (!employee) return notFound(res);
+  res.json({ data: employee });
+});
+
+app.post('/api/v1/hr/employees', authMiddleware, (req, res) => {
+  const dto = req.body ?? {};
+  const now = new Date().toISOString();
+  const employee = {
+    id: crypto.randomUUID(),
+    fullName: String(dto.fullName ?? '').trim(),
+    position: String(dto.position ?? '').trim(),
+    department: String(dto.department ?? '').trim(),
+    employmentType: dto.employmentType === 'outsource' ? 'outsource' : 'staff',
+    status: 'active',
+    email: dto.email?.trim() || null,
+    phone: dto.phone?.trim() || null,
+    hiredAt: dto.hiredAt ?? now.slice(0, 10),
+    createdAt: now,
+    updatedAt: now,
+  };
+  if (!employee.fullName || !employee.position || !employee.department) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'ФИО, должность и отдел обязательны' });
+    return;
+  }
+  const employees = loadEmployees();
+  employees.push(employee);
+  saveEmployees(employees);
+  res.status(201).json({ data: employee });
+});
+
+app.patch('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
+  const employees = loadEmployees();
+  const idx = employees.findIndex((e) => e.id === req.params.id);
+  if (idx === -1) return notFound(res);
+  const current = employees[idx];
+  const dto = req.body ?? {};
+  employees[idx] = {
+    ...current,
+    ...dto,
+    fullName: dto.fullName?.trim() ?? current.fullName,
+    position: dto.position?.trim() ?? current.position,
+    department: dto.department?.trim() ?? current.department,
+    employmentType:
+      dto.employmentType === 'outsource' || dto.employmentType === 'staff'
+        ? dto.employmentType
+        : current.employmentType,
+    email: dto.email !== undefined ? dto.email?.trim() || null : current.email,
+    phone: dto.phone !== undefined ? dto.phone?.trim() || null : current.phone,
+    updatedAt: new Date().toISOString(),
+  };
+  saveEmployees(employees);
+  res.json({ data: employees[idx] });
+});
+
+app.delete('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
+  const employees = loadEmployees();
+  const next = employees.filter((e) => e.id !== req.params.id);
+  if (next.length === employees.length) return notFound(res);
+  saveEmployees(next);
+  res.status(204).end();
+});
+
+// ─── AI Assistant ───────────────────────────────────────────────────────────
+
+app.post('/api/v1/assistant/chat', authMiddleware, async (req, res) => {
+  const { messages } = req.body ?? {};
+  if (!Array.isArray(messages) || messages.length === 0) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Нужен массив messages' });
+    return;
+  }
+
+  const sanitized = messages
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-20)
+    .map((m) => ({ role: m.role, content: m.content.trim() }))
+    .filter((m) => m.content.length > 0);
+
+  if (sanitized.length === 0 || sanitized[sanitized.length - 1].role !== 'user') {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Последнее сообщение должно быть от user' });
+    return;
+  }
+
+  try {
+    const result = await runAssistantChat(sanitized, req.user);
+    res.json({ data: result });
+  } catch (err) {
+    console.error('Assistant error:', err);
+    res.status(502).json({
+      code: 'ASSISTANT_ERROR',
+      message: err instanceof Error ? err.message : 'Ошибка AI-ассистента',
+    });
+  }
+});
+
+app.post('/api/v1/assistant/reset', authMiddleware, (req, res) => {
+  clearStoredAgent(req.user.role);
+  res.status(204).end();
 });
 
 app.get('/api/health', (_req, res) => {

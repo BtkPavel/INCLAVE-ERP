@@ -42,4 +42,8 @@ export const KEYS = {
   transactions: 'inclave-erp-finance-transactions',
   settings: 'inclave-erp-finance-settings',
   expenses: 'inclave-erp-operational-expenses',
+  projects: 'inclave-erp-projects',
+  sprints: 'inclave-erp-project-sprints',
+  employees: 'inclave-erp-hr-employees',
+  assistantAgents: 'inclave-erp-cursor-agents',
 };
