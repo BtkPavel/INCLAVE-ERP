@@ -1,6 +1,7 @@
 .button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   height: 32px;
   padding: 0 12px;
@@ -9,6 +10,7 @@
   color: var(--text-secondary);
   border: 1px solid var(--border-solid);
   transition: color 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
 }
 
 .button:hover {
@@ -37,14 +39,19 @@
   font-weight: 600;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .label {
-    font-size: 11px;
+    display: none;
   }
 
   .button {
+    width: 36px;
     height: 36px;
-    padding: 0 10px;
+    padding: 0;
     border-radius: 8px;
+  }
+
+  .icon {
+    font-size: 16px;
   }
 }
