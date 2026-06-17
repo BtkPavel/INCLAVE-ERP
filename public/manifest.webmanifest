@@ -3,27 +3,27 @@
   "name": "INCLAVE ERP",
   "short_name": "INCLAVE",
   "description": "Система управления предприятием INCLAVE",
-  "start_url": "http://87.199.192.18/",
-  "scope": "http://87.199.192.18/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#08090a",
   "icons": [
     {
-      "src": "http://87.199.192.18/icons/inclave-192.png",
+      "src": "/icons/inclave-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "http://87.199.192.18/icons/inclave-512.png",
+      "src": "/icons/inclave-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "http://87.199.192.18/icons/inclave-180.png",
+      "src": "/icons/inclave-180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"

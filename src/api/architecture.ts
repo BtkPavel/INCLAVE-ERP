@@ -141,6 +141,16 @@ export const API_MODULES = {
       delete: ep('DELETE', '/employees/:id', 'Удаление сотрудника'),
     },
   },
+
+  assistant: {
+    name: 'assistant',
+    basePath: `${API_PREFIX}/assistant`,
+    description: 'AI-ассистент (Cursor)',
+    endpoints: {
+      chat: ep('POST', '/chat', 'Диалог с ассистентом'),
+      reset: ep('POST', '/reset', 'Сброс сессии Cursor'),
+    },
+  },
 } as const satisfies Record<string, ApiModuleDefinition>;
 
 export type ApiModuleName = keyof typeof API_MODULES;

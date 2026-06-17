@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { DashboardModulePreview } from '../components/dashboard/DashboardModulePreview';
 import styles from './DashboardPage.module.css';
 
 const MODULES = [
@@ -63,11 +64,7 @@ export function DashboardPage() {
           <Link key={mod.to} to={mod.to} className={styles.card}>
             <span className={styles.cardFig}>{mod.fig}</span>
             <div className={styles.cardPlaceholder} aria-hidden>
-              <div className={styles.cardGrid}>
-                <div />
-                <div />
-                <div />
-              </div>
+              <DashboardModulePreview modulePath={mod.to} />
             </div>
             <h2 className={styles.cardTitle}>{mod.label}</h2>
             <p className={styles.cardDesc}>{mod.description}</p>

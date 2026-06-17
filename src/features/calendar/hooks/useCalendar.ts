@@ -37,6 +37,7 @@ export function useCalendar() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const eventsRef = useRef<CalendarEvent[]>([]);
   eventsRef.current = events;
 
@@ -94,6 +95,12 @@ export function useCalendar() {
   }, [loadCalendarData]);
 
   useEffect(() => {
+    if (!saveNotice) return;
+    const timer = window.setTimeout(() => setSaveNotice(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [saveNotice]);
+
+  useEffect(() => {
     function handleStorage(event: StorageEvent) {
       if (event.key === TASKS_STORAGE_KEY) {
         loadCalendarData();
@@ -104,11 +111,17 @@ export function useCalendar() {
       loadCalendarData();
     }
 
+    function handleAssistantAction() {
+      loadCalendarData();
+    }
+
     window.addEventListener('storage', handleStorage);
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('inclave-assistant-action', handleAssistantAction);
     return () => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('inclave-assistant-action', handleAssistantAction);
     };
   }, [loadCalendarData]);
 
@@ -262,34 +275,44 @@ export function useCalendar() {
     setEditingEvent(null);
   }
 
+  function mergeSavedEvent(saved: CalendarEvent) {
+    setEvents((prev) => {
+      const next = prev.filter((e) => e.id !== saved.id);
+      next.push(saved);
+      next.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+      return next;
+    });
+  }
+
   async function saveEvent(dto: CreateEventDto) {
     if (!apiClient.isMockMode() && !localStorage.getItem('inclave-erp-token')) {
       throw new ApiError(401, {
         code: 'UNAUTHORIZED',
-        message: 'Войдите в систему заново (пароль директора: inclave-dir)',
+        message: 'Войдите в систему заново',
       });
     }
 
+    let saved: CalendarEvent;
     if (editingEvent) {
       clearReminderForEvent(editingEvent.id);
-      await calendarApi.updateEvent(editingEvent.id, dto);
+      saved = (await calendarApi.updateEvent(editingEvent.id, dto)).data;
     } else {
-      await calendarApi.createEvent(dto);
+      saved = (await calendarApi.createEvent(dto)).data;
     }
 
-    const eventDay = startOfDay(new Date(dto.startAt));
+    const eventDay = startOfDay(new Date(saved.startAt));
     setViewDate(eventDay);
     setSelectedDate(eventDay);
-
+    mergeSavedEvent(saved);
+    setSaveNotice(`Событие «${saved.title}» сохранено`);
     closeModal();
-    await loadCalendarData();
   }
 
   async function removeEvent(id: string) {
     clearReminderForEvent(id);
     await calendarApi.deleteEvent(id);
+    setEvents((prev) => prev.filter((e) => e.id !== id));
     closeModal();
-    await loadCalendarData();
   }
 
   function getEventsForDay(date: Date): CalendarEvent[] {
@@ -314,6 +337,7 @@ export function useCalendar() {
     loading,
     modalOpen,
     editingEvent,
+    saveNotice,
     selectedDayEvents,
     selectedDayTasks,
     selectedDayHolidays,

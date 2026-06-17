@@ -4,6 +4,7 @@ import express from 'express';
 import { authenticate, authMiddleware, signToken } from './auth.mjs';
 import { KEYS, loadJson, saveJson } from './db.mjs';
 import { buildPaymentCalendar, buildProfitTaxRecord, buildSummary } from './finance.mjs';
+import { runAssistantChat, clearStoredAgent } from './assistant.mjs';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -143,6 +144,98 @@ app.delete('/api/v1/calendar/events/:id', authMiddleware, (req, res) => {
   const next = events.filter((e) => e.id !== req.params.id);
   if (next.length === events.length) return notFound(res);
   saveEvents(next);
+  res.status(204).end();
+});
+
+// ─── Projects ───────────────────────────────────────────────────────────────
+
+function loadProjects() {
+  return loadJson(KEYS.projects, []);
+}
+
+function saveProjects(projects) {
+  saveJson(KEYS.projects, projects);
+}
+
+function filterProjects(projects, { category, status } = {}) {
+  return projects.filter((project) => {
+    if (category && project.category !== category) return false;
+    if (status && project.status !== status) return false;
+    return true;
+  });
+}
+
+app.get('/api/v1/projects/stats', authMiddleware, (_req, res) => {
+  const projects = loadProjects();
+  res.json({
+    data: {
+      total: projects.length,
+      active: projects.filter((p) => p.status === 'active').length,
+      completed: projects.filter((p) => p.status === 'completed').length,
+      onHold: projects.filter((p) => p.status === 'on_hold').length,
+    },
+  });
+});
+
+app.get('/api/v1/projects', authMiddleware, (req, res) => {
+  const { category, status, page, perPage } = req.query;
+  const items = filterProjects(loadProjects(), { category, status });
+  res.json(paginate(items, Number(page) || 1, Number(perPage) || 50));
+});
+
+app.get('/api/v1/projects/:id', authMiddleware, (req, res) => {
+  const project = loadProjects().find((p) => p.id === req.params.id);
+  if (!project) return notFound(res);
+  res.json({ data: project });
+});
+
+app.post('/api/v1/projects', authMiddleware, (req, res) => {
+  const dto = req.body ?? {};
+  const now = new Date().toISOString();
+  const project = {
+    id: crypto.randomUUID(),
+    name: String(dto.name ?? '').trim(),
+    code: String(dto.code ?? '').trim(),
+    description: dto.description?.trim() || null,
+    category: dto.category === 'current' ? 'current' : 'investment',
+    status: dto.status ?? 'draft',
+    startDate: dto.startDate ?? null,
+    endDate: dto.endDate ?? null,
+    budget: dto.budget ?? null,
+    managerId: dto.managerId ?? null,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const projects = loadProjects();
+  projects.push(project);
+  saveProjects(projects);
+  res.status(201).json({ data: project });
+});
+
+app.patch('/api/v1/projects/:id', authMiddleware, (req, res) => {
+  const projects = loadProjects();
+  const idx = projects.findIndex((p) => p.id === req.params.id);
+  if (idx === -1) return notFound(res);
+  const current = projects[idx];
+  const dto = req.body ?? {};
+  projects[idx] = {
+    ...current,
+    ...dto,
+    name: dto.name?.trim() ?? current.name,
+    code: dto.code?.trim() ?? current.code,
+    description: dto.description !== undefined ? dto.description.trim() || null : current.description,
+    category: dto.category === 'current' || dto.category === 'investment' ? dto.category : current.category,
+    updatedAt: new Date().toISOString(),
+  };
+  saveProjects(projects);
+  res.json({ data: projects[idx] });
+});
+
+app.delete('/api/v1/projects/:id', authMiddleware, (req, res) => {
+  const projects = loadProjects();
+  const next = projects.filter((p) => p.id !== req.params.id);
+  if (next.length === projects.length) return notFound(res);
+  saveProjects(next);
   res.status(204).end();
 });
 
@@ -433,6 +526,43 @@ app.get('/api/v1/finance/payment-calendar', authMiddleware, (req, res) => {
   }
   const data = buildPaymentCalendar(loadExpenses(), { from, to });
   res.json({ data });
+});
+
+// ─── AI Assistant ───────────────────────────────────────────────────────────
+
+app.post('/api/v1/assistant/chat', authMiddleware, async (req, res) => {
+  const { messages } = req.body ?? {};
+  if (!Array.isArray(messages) || messages.length === 0) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Нужен массив messages' });
+    return;
+  }
+
+  const sanitized = messages
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-20)
+    .map((m) => ({ role: m.role, content: m.content.trim() }))
+    .filter((m) => m.content.length > 0);
+
+  if (sanitized.length === 0 || sanitized[sanitized.length - 1].role !== 'user') {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Последнее сообщение должно быть от user' });
+    return;
+  }
+
+  try {
+    const result = await runAssistantChat(sanitized, req.user);
+    res.json({ data: result });
+  } catch (err) {
+    console.error('Assistant error:', err);
+    res.status(502).json({
+      code: 'ASSISTANT_ERROR',
+      message: err instanceof Error ? err.message : 'Ошибка AI-ассистента',
+    });
+  }
+});
+
+app.post('/api/v1/assistant/reset', authMiddleware, (req, res) => {
+  clearStoredAgent(req.user.role);
+  res.status(204).end();
 });
 
 app.get('/api/health', (_req, res) => {

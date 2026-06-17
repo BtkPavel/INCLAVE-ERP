@@ -1,5 +1,6 @@
 import { useAuth } from '../auth/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
+import { AiAssistantButton } from './AiAssistantButton';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -31,7 +32,10 @@ export function Header({ onMenuToggle, menuOpen }: HeaderProps) {
         </div>
 
         <div className={styles.right}>
-          <ThemeToggle />
+          <div className={styles.toolbar}>
+            <ThemeToggle />
+            <AiAssistantButton />
+          </div>
           {user && (
             <>
             <div className={styles.userInfo}>

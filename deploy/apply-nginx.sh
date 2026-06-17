@@ -11,5 +11,5 @@ nginx -t
 systemctl reload nginx
 
 echo "Nginx обновлён."
-echo "HTTP:  http://$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')/"
-echo "HTTPS: https://$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')/"
+echo "Домен: https://erp-inclave.pro/"
+echo "IP:    http://$(curl -4 -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')/"
