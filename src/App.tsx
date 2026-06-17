@@ -9,6 +9,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectsInvestmentPage } from './pages/ProjectsInvestmentPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { ProjectsCurrentPage } from './pages/ProjectsCurrentPage';
 import { FinancePage } from './pages/FinancePage';
 import { FinanceExpensePage } from './pages/FinanceExpensePage';
@@ -32,6 +33,8 @@ function AppRoutes() {
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/projects" element={<ProjectsPage />}>
+                  <Route path="invest/:projectId" element={<ProjectDetailPage category="investment" />} />
+                  <Route path="current/:projectId" element={<ProjectDetailPage category="current" />} />
                   <Route path="invest" element={<ProjectsInvestmentPage />} />
                   <Route path="current" element={<ProjectsCurrentPage />} />
                   <Route path="investment" element={<Navigate to="/projects/invest" replace />} />

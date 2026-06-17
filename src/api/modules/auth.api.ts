@@ -1,4 +1,4 @@
-import type { AuthSession, LoginDto } from '../types/auth';
+import type { AuthSession, LoginDto, SystemUser } from '../types/auth';
 import { apiClient, clearAuthToken, saveAuthToken } from '../client';
 import { buildUrl } from '../architecture';
 
@@ -27,6 +27,10 @@ export const authApi = {
 
   me(): Promise<{ data: AuthSession['user'] }> {
     return apiClient.get(buildUrl('auth', 'me'));
+  },
+
+  listUsers(): Promise<{ data: SystemUser[] }> {
+    return apiClient.get(buildUrl('auth', 'users'));
   },
 
   refresh(refreshToken: string): Promise<AuthSession> {

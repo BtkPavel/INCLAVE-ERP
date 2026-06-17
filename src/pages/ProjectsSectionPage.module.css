@@ -33,3 +33,30 @@
   max-width: 560px;
   line-height: 1.5;
 }
+
+.createBtn {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  transition: filter 0.15s;
+}
+
+.createBtn:hover {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 640px) {
+  .headerRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .createBtn {
+    width: 100%;
+  }
+}

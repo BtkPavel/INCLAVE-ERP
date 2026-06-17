@@ -10,7 +10,7 @@ export function HrStaffPage() {
       state={employees}
       figLabel="FIG 1.5.1"
       emptyTitle="Штатные сотрудники"
-      emptyDescription="Здесь будет реестр штатных сотрудников: должности, отделы, контакты и статусы. API готов — ожидается подключение backend."
+      emptyDescription="Реестр штатных сотрудников: должности, отделы, контакты и статусы."
     >
       {() => <div className={styles.content} />}
     </ApiModuleShell>

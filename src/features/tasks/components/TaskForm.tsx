@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { projectsApi } from '../../../api/modules/projects.api';
+import type { Project } from '../../../api/types/projects';
 import type { CreateTaskDto, Task, TaskPriority } from '../../../api/types/tasks';
 import { DatePicker } from '../../../components/DatePicker';
 import { FormSelect } from '../../../components/FormSelect';
@@ -20,8 +22,25 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
   const [description, setDescription] = useState(initial?.description ?? '');
   const [priority, setPriority] = useState<TaskPriority>(initial?.priority ?? 'medium');
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? '');
+  const [projectId, setProjectId] = useState(initial?.projectId ?? '');
+  const [projects, setProjects] = useState<Project[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void projectsApi
+      .list({ perPage: 100 })
+      .then((res) => {
+        if (!cancelled) setProjects(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setProjects([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -39,12 +58,14 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
         description: description.trim() || undefined,
         priority,
         dueDate: dueDate || undefined,
+        projectId: projectId || null,
       });
       if (!initial) {
         setTitle('');
         setDescription('');
         setPriority('medium');
         setDueDate('');
+        setProjectId('');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось сохранить задачу');
@@ -73,6 +94,19 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
           placeholder="Детали, ссылки, контекст..."
           rows={3}
         />
+      </label>
+
+      <label className={styles.field}>
+        <span>Проект</span>
+        <FormSelect value={projectId} onChange={setProjectId}>
+          <option value="">Личная задача (только для меня)</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+              {project.category === 'investment' ? ' · инвест' : ' · текущий'}
+            </option>
+          ))}
+        </FormSelect>
       </label>
 
       <div className={styles.grid}>

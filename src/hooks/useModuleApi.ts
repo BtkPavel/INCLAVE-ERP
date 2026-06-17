@@ -13,10 +13,33 @@ import type { ISODate } from '../api/types/common';
 
 import type { ProjectCategory } from '../api/types/projects';
 
-export function useProjects(category?: ProjectCategory) {
+export function useProjects(category?: ProjectCategory, version = 0) {
   return useApiResource(
-    useCallback(() => projectsApi.list(category ? { category } : undefined), [category]),
+    useCallback(() => projectsApi.list(category ? { category } : undefined), [category, version]),
   );
+}
+
+export function useProjectActions() {
+  const [version, setVersion] = useState(0);
+  const bump = () => setVersion((v) => v + 1);
+
+  return {
+    version,
+    async create(dto: Parameters<typeof projectsApi.create>[0]) {
+      const result = await projectsApi.create(dto);
+      bump();
+      return result;
+    },
+    async update(id: string, dto: Parameters<typeof projectsApi.update>[1]) {
+      const result = await projectsApi.update(id, dto);
+      bump();
+      return result;
+    },
+    async remove(id: string) {
+      await projectsApi.delete(id);
+      bump();
+    },
+  };
 }
 
 export function useProjectStats() {

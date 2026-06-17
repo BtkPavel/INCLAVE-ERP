@@ -1,7 +1,8 @@
 import type { CalendarEvent } from '../../../api/types/calendar';
 import type { Task } from '../../../api/types/tasks';
 import type { PublicHoliday } from '../holidays/publicHolidays';
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../../tasks/constants';
+import { TASK_STATUS_LABELS } from '../../tasks/constants';
+import { TaskPriorityBadge } from '../../tasks/components/TaskPriorityBadge';
 import { EVENT_TYPE_LABELS, EVENT_PRIORITY_LABELS, REMINDER_OPTIONS } from '../constants';
 import { formatFullDate, formatTime } from '../utils/dates';
 import { EventChip } from './EventChip';
@@ -68,7 +69,8 @@ export function CalendarSidebar({
                   >
                     <TaskChip task={task} static />
                     <span className={styles.eventMeta}>
-                      {TASK_STATUS_LABELS[task.status]} · {TASK_PRIORITY_LABELS[task.priority]}
+                      {TASK_STATUS_LABELS[task.status]} ·{' '}
+                      <TaskPriorityBadge priority={task.priority} />
                     </span>
                   </button>
                 </li>

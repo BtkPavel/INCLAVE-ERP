@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import type { BreadcrumbItem } from '../components/Breadcrumbs';
@@ -8,9 +9,31 @@ const PROJECT_SECTIONS = [
   { to: '/projects/current', label: 'Текущие проекты' },
 ] as const;
 
-function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
-  const activeIndex = PROJECT_SECTIONS.findIndex((section) =>
-    pathname.startsWith(section.to),
+const PROJECT_DETAIL_RE = /^\/projects\/(invest|current)\/([^/]+)$/;
+
+export interface ProjectsOutletContext {
+  setDetailLabel: (label: string | null) => void;
+}
+
+function parseProjectDetail(pathname: string) {
+  const match = pathname.match(PROJECT_DETAIL_RE);
+  if (!match) return null;
+  return { section: match[1] as 'invest' | 'current' };
+}
+
+function getBreadcrumbs(pathname: string, detailLabel: string | null): BreadcrumbItem[] {
+  const detail = parseProjectDetail(pathname);
+
+  if (detail) {
+    const section = detail.section === 'invest' ? PROJECT_SECTIONS[0] : PROJECT_SECTIONS[1];
+    return [
+      { label: section.label, to: section.to },
+      { label: detailLabel ?? 'Загрузка…' },
+    ];
+  }
+
+  const activeIndex = PROJECT_SECTIONS.findIndex(
+    (section) => pathname === section.to || pathname === `${section.to}/`,
   );
   const currentIndex = activeIndex === -1 ? 0 : activeIndex;
 
@@ -22,7 +45,12 @@ function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
 export function ProjectsPage() {
   const { pathname } = useLocation();
+  const [detailLabel, setDetailLabel] = useState<string | null>(null);
   const isRoot = pathname === '/projects' || pathname === '/projects/';
+
+  useEffect(() => {
+    setDetailLabel(null);
+  }, [pathname]);
 
   if (isRoot) {
     return <Navigate to="/projects/invest" replace />;
@@ -38,9 +66,9 @@ export function ProjectsPage() {
         </p>
       </header>
 
-      <Breadcrumbs items={getBreadcrumbs(pathname)} />
+      <Breadcrumbs items={getBreadcrumbs(pathname, detailLabel)} />
 
-      <Outlet />
+      <Outlet context={{ setDetailLabel } satisfies ProjectsOutletContext} />
     </div>
   );
 }

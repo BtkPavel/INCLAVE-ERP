@@ -47,6 +47,7 @@ export const tasksStorage = {
       status: dto.status ?? 'todo',
       priority: dto.priority ?? 'medium',
       projectId: dto.projectId ?? null,
+      sprintId: dto.sprintId ?? null,
       assigneeId,
       dueDate: dto.dueDate ?? null,
       completedAt: null,
