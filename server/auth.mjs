@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { isRoleAccessBlocked } from './access.mjs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-inclave-secret-change-me';
 const TOKEN_TTL = '30d';
@@ -33,6 +34,7 @@ export function listUsers() {
 export function authenticate(role, password) {
   const user = USERS[role];
   if (!user || user.password !== password) return null;
+  if (isRoleAccessBlocked(role)) return null;
   return { role, name: user.name, title: user.title };
 }
 
@@ -45,6 +47,7 @@ export function verifyToken(token) {
     const payload = jwt.verify(token, JWT_SECRET);
     const user = USERS[payload.role];
     if (!user) return null;
+    if (isRoleAccessBlocked(payload.role)) return null;
     return { role: payload.role, name: user.name, title: user.title };
   } catch {
     return null;

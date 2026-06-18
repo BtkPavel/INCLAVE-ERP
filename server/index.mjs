@@ -4,7 +4,8 @@ import express from 'express';
 import { authenticate, authMiddleware, listUsers, signToken } from './auth.mjs';
 import { KEYS, loadJson, saveJson } from './db.mjs';
 import { buildPaymentCalendar, buildProfitTaxRecord, buildSummary } from './finance.mjs';
-import { buildHrStats, filterEmployees, loadEmployees as loadHrEmployees } from './hr.mjs';
+import { buildHrStats, ensureSeedEmployees, filterEmployees, loadEmployees as loadHrEmployees, normalizeEmployee } from './hr.mjs';
+import { isRoleAccessBlocked } from './access.mjs';
 import {
   applySprintNumber,
   createSprintPayload,
@@ -37,6 +38,13 @@ function notFound(res) {
 
 app.post('/api/v1/auth/login', (req, res) => {
   const { role, password } = req.body ?? {};
+  if (role && isRoleAccessBlocked(role)) {
+    res.status(403).json({
+      code: 'ACCESS_BLOCKED',
+      message: 'Доступ заблокирован. Обратитесь к директору.',
+    });
+    return;
+  }
   const user = authenticate(role, password);
   if (!user) {
     res.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Неверный пароль' });
@@ -802,8 +810,17 @@ app.get('/api/v1/finance/payment-calendar', authMiddleware, (req, res) => {
 
 // ─── HR (Кадры) ─────────────────────────────────────────────────────────────
 
+function requireDirector(req, res, next) {
+  if (req.user.role !== 'director') {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Доступно только директору' });
+    return;
+  }
+  next();
+}
+
 function loadEmployees() {
-  return loadHrEmployees(loadJson, KEYS.employees);
+  ensureSeedEmployees(loadJson, saveJson, KEYS.employees);
+  return loadHrEmployees(loadJson, KEYS.employees).map(normalizeEmployee);
 }
 
 function saveEmployees(employees) {
@@ -831,10 +848,11 @@ app.get('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
   res.json({ data: employee });
 });
 
-app.post('/api/v1/hr/employees', authMiddleware, (req, res) => {
+app.post('/api/v1/hr/employees', authMiddleware, requireDirector, (req, res) => {
   const dto = req.body ?? {};
   const now = new Date().toISOString();
-  const employee = {
+  const validRoles = listUsers().map((user) => user.role);
+  const employee = normalizeEmployee({
     id: crypto.randomUUID(),
     fullName: String(dto.fullName ?? '').trim(),
     position: String(dto.position ?? '').trim(),
@@ -844,9 +862,13 @@ app.post('/api/v1/hr/employees', authMiddleware, (req, res) => {
     email: dto.email?.trim() || null,
     phone: dto.phone?.trim() || null,
     hiredAt: dto.hiredAt ?? now.slice(0, 10),
+    paymentType: dto.paymentType === 'unpaid' ? 'unpaid' : 'paid',
+    paymentNote: dto.paymentNote?.trim() || null,
+    systemRole: dto.systemRole && validRoles.includes(dto.systemRole) ? dto.systemRole : null,
+    accessBlocked: false,
     createdAt: now,
     updatedAt: now,
-  };
+  });
   if (!employee.fullName || !employee.position || !employee.department) {
     res.status(400).json({ code: 'BAD_REQUEST', message: 'ФИО, должность и отдел обязательны' });
     return;
@@ -857,13 +879,14 @@ app.post('/api/v1/hr/employees', authMiddleware, (req, res) => {
   res.status(201).json({ data: employee });
 });
 
-app.patch('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
+app.patch('/api/v1/hr/employees/:id', authMiddleware, requireDirector, (req, res) => {
   const employees = loadEmployees();
   const idx = employees.findIndex((e) => e.id === req.params.id);
   if (idx === -1) return notFound(res);
   const current = employees[idx];
   const dto = req.body ?? {};
-  employees[idx] = {
+  const validRoles = listUsers().map((user) => user.role);
+  employees[idx] = normalizeEmployee({
     ...current,
     ...dto,
     fullName: dto.fullName?.trim() ?? current.fullName,
@@ -873,15 +896,28 @@ app.patch('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
       dto.employmentType === 'outsource' || dto.employmentType === 'staff'
         ? dto.employmentType
         : current.employmentType,
+    status: dto.status ?? current.status,
     email: dto.email !== undefined ? dto.email?.trim() || null : current.email,
     phone: dto.phone !== undefined ? dto.phone?.trim() || null : current.phone,
+    paymentType:
+      dto.paymentType === 'unpaid' || dto.paymentType === 'paid'
+        ? dto.paymentType
+        : current.paymentType,
+    paymentNote: dto.paymentNote !== undefined ? dto.paymentNote?.trim() || null : current.paymentNote,
+    systemRole:
+      dto.systemRole === null
+        ? null
+        : dto.systemRole && validRoles.includes(dto.systemRole)
+          ? dto.systemRole
+          : current.systemRole,
+    accessBlocked: dto.accessBlocked !== undefined ? dto.accessBlocked === true : current.accessBlocked,
     updatedAt: new Date().toISOString(),
-  };
+  });
   saveEmployees(employees);
   res.json({ data: employees[idx] });
 });
 
-app.delete('/api/v1/hr/employees/:id', authMiddleware, (req, res) => {
+app.delete('/api/v1/hr/employees/:id', authMiddleware, requireDirector, (req, res) => {
   const employees = loadEmployees();
   const next = employees.filter((e) => e.id !== req.params.id);
   if (next.length === employees.length) return notFound(res);

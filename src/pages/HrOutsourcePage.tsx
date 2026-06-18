@@ -1,18 +1,12 @@
-import { ApiModuleShell } from '../components/ApiModuleShell';
-import { useHrEmployees } from '../hooks/useModuleApi';
-import styles from './HrSectionPage.module.css';
+import { HrEmployeesSection } from './HrEmployeesSection';
 
 export function HrOutsourcePage() {
-  const employees = useHrEmployees('outsource');
-
   return (
-    <ApiModuleShell
-      state={employees}
-      figLabel="FIG 1.5.2"
-      emptyTitle="Аутсорс-специалисты"
-      emptyDescription="Реестр внешних специалистов: контрагенты, договоры, сроки и ставки."
-    >
-      {() => <div className={styles.content} />}
-    </ApiModuleShell>
+    <HrEmployeesSection
+      employmentType="outsource"
+      fig="FIG 1.5.2"
+      title="Аутсорс-специалисты"
+      subtitle="Реестр внешних специалистов: контрагенты, оплата, сроки и доступ в ERP."
+    />
   );
 }

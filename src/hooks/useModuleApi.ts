@@ -5,7 +5,7 @@ import { calendarApi } from '../api/modules/calendar.api';
 import { tasksApi } from '../api/modules/tasks.api';
 import { financeApi } from '../api/modules/finance.api';
 import { hrApi } from '../api/modules/hr.api';
-import type { EmploymentType } from '../api/types/hr';
+import type { CreateEmployeeDto, Employee, EmploymentType, UpdateEmployeeDto } from '../api/types/hr';
 import type { FinanceSection } from '../api/types/finance';
 import type { TaskStatus } from '../api/types/tasks';
 import type { PaginatedResponse } from '../api/types/common';
@@ -173,8 +173,38 @@ export function useOperationalExpenseActions() {
   };
 }
 
-export function useHrEmployees(employmentType: EmploymentType) {
+export function useHrEmployees(employmentType: EmploymentType, version = 0) {
   return useApiResource(
-    useCallback(() => hrApi.list({ employmentType }), [employmentType]),
+    useCallback(() => hrApi.list({ employmentType }), [employmentType, version]),
   );
+}
+
+export function useHrEmployeeActions() {
+  const [version, setVersion] = useState(0);
+  const bump = () => setVersion((v) => v + 1);
+
+  return {
+    version,
+    async create(dto: CreateEmployeeDto) {
+      const result = await hrApi.create(dto);
+      bump();
+      return result;
+    },
+    async update(id: string, dto: UpdateEmployeeDto) {
+      const result = await hrApi.update(id, dto);
+      bump();
+      return result;
+    },
+    async remove(id: string) {
+      await hrApi.delete(id);
+      bump();
+    },
+    async toggleAccess(employee: Employee) {
+      const result = await hrApi.update(employee.id, {
+        accessBlocked: !employee.accessBlocked,
+      });
+      bump();
+      return result;
+    },
+  };
 }

@@ -3,6 +3,7 @@ import type {
   CreateEmployeeDto,
   Employee,
   EmployeeListParams,
+  UpdateEmployeeDto,
 } from '../types/hr';
 import { apiClient, apiMocks } from '../client';
 import type { QueryParams } from '../client';
@@ -26,7 +27,7 @@ export const hrApi = {
     return apiClient.post(`${BASE}/employees`, dto);
   },
 
-  update(id: string, dto: Partial<CreateEmployeeDto>): Promise<{ data: Employee }> {
+  update(id: string, dto: UpdateEmployeeDto): Promise<{ data: Employee }> {
     return apiClient.patch(buildUrl('hr', 'update', { id }), dto);
   },
 

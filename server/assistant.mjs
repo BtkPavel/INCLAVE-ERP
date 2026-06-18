@@ -1,6 +1,6 @@
 import { KEYS, loadJson, saveJson } from './db.mjs';
 import { buildPaymentCalendar, buildSummary } from './finance.mjs';
-import { buildHrStats, filterEmployees, loadEmployees as loadHrEmployees } from './hr.mjs';
+import { buildHrStats, filterEmployees, loadEmployees as loadHrEmployees, normalizeEmployee } from './hr.mjs';
 
 const CURSOR_API = 'https://api.cursor.com/v1';
 const POLL_MS = 2000;
@@ -266,7 +266,7 @@ function saveExpenses(expenses) {
 }
 
 function loadEmployees() {
-  return loadHrEmployees(loadJson, KEYS.employees);
+  return loadHrEmployees(loadJson, KEYS.employees).map(normalizeEmployee);
 }
 
 function saveEmployees(employees) {
@@ -602,7 +602,7 @@ function executeTool(name, args, user) {
     }
     case 'create_employee': {
       const now = new Date().toISOString();
-      const employee = {
+      const employee = normalizeEmployee({
         id: crypto.randomUUID(),
         fullName: String(args.fullName ?? '').trim(),
         position: String(args.position ?? '').trim(),
@@ -612,9 +612,13 @@ function executeTool(name, args, user) {
         email: args.email?.trim() || null,
         phone: args.phone?.trim() || null,
         hiredAt: args.hiredAt ?? now.slice(0, 10),
+        paymentType: args.paymentType === 'unpaid' ? 'unpaid' : 'paid',
+        paymentNote: args.paymentNote?.trim() || null,
+        systemRole: null,
+        accessBlocked: false,
         createdAt: now,
         updatedAt: now,
-      };
+      });
       if (!employee.fullName || !employee.position || !employee.department) {
         return { ok: false, error: 'Нужны fullName, position и department' };
       }
@@ -628,7 +632,7 @@ function executeTool(name, args, user) {
       const idx = employees.findIndex((e) => e.id === args.employeeId);
       if (idx === -1) return { ok: false, error: 'Сотрудник не найден' };
       const current = employees[idx];
-      employees[idx] = {
+      employees[idx] = normalizeEmployee({
         ...current,
         fullName: args.fullName?.trim() ?? current.fullName,
         position: args.position?.trim() ?? current.position,
@@ -638,8 +642,9 @@ function executeTool(name, args, user) {
             ? args.employmentType
             : current.employmentType,
         status: args.status ?? current.status,
+        accessBlocked: args.accessBlocked === true,
         updatedAt: new Date().toISOString(),
-      };
+      });
       saveEmployees(employees);
       return { ok: true, data: employees[idx] };
     }

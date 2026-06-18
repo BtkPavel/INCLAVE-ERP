@@ -1,5 +1,48 @@
+import crypto from 'node:crypto';
+
 export function loadEmployees(loadJson, key) {
   return loadJson(key, []);
+}
+
+export function normalizeEmployee(employee) {
+  return {
+    ...employee,
+    paymentType: employee.paymentType === 'unpaid' ? 'unpaid' : 'paid',
+    paymentNote: employee.paymentNote ?? null,
+    systemRole: employee.systemRole ?? null,
+    accessBlocked: employee.accessBlocked === true,
+  };
+}
+
+export function ensureSeedEmployees(loadJson, saveJson, key) {
+  const employees = loadEmployees(loadJson, key).map(normalizeEmployee);
+  const karinaExists = employees.some(
+    (employee) =>
+      employee.systemRole === 'product_office' || employee.fullName === 'Карина Михневич',
+  );
+  if (karinaExists) return employees;
+
+  const now = new Date().toISOString();
+  const karina = normalizeEmployee({
+    id: crypto.randomUUID(),
+    fullName: 'Карина Михневич',
+    position: 'UX/UI Дизайнер',
+    department: 'Product Office',
+    employmentType: 'outsource',
+    status: 'active',
+    email: null,
+    phone: null,
+    hiredAt: now.slice(0, 10),
+    paymentType: 'unpaid',
+    paymentNote: 'Без оплаты',
+    systemRole: 'product_office',
+    accessBlocked: false,
+    createdAt: now,
+    updatedAt: now,
+  });
+  const next = [...employees, karina];
+  saveJson(key, next);
+  return next;
 }
 
 export function filterEmployees(employees, { employmentType, department, status, search } = {}) {

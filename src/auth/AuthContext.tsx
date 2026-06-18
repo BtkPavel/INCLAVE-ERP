@@ -102,6 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (err.status === 401) {
           return { ok: false, error: 'Неверный пароль' };
         }
+        if (err.status === 403 && err.code === 'ACCESS_BLOCKED') {
+          return { ok: false, error: 'Доступ заблокирован. Обратитесь к директору.' };
+        }
         if (err.status === 0) {
           return {
             ok: false,
