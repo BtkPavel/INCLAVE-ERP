@@ -1,4 +1,4 @@
-export type UserRole = 'director' | 'accountant';
+export type UserRole = 'director' | 'accountant' | 'product_office';
 
 export interface User {
   role: UserRole;
@@ -16,6 +16,11 @@ const USERS: Record<UserRole, { password: string; name: string; title: string }>
     password: import.meta.env.VITE_ACCOUNTANT_PASSWORD ?? 'inclave-buh',
     name: 'Бухгалтер',
     title: 'Финансовый отдел',
+  },
+  product_office: {
+    password: import.meta.env.VITE_PRODUCT_OFFICE_PASSWORD ?? 'Karina1721@',
+    name: 'Product Office',
+    title: 'Продуктовый офис',
   },
 };
 
@@ -36,7 +41,7 @@ export function loadSession(): User | null {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as User;
-    if (parsed.role !== 'director' && parsed.role !== 'accountant') return null;
+    if (!(parsed.role in USERS)) return null;
     return parsed;
   } catch {
     return null;

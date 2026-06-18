@@ -30,3 +30,30 @@ export function showEventReminder(title: string, body: string): void {
     tag: `inclave-event-${title}-${Date.now()}`,
   });
 }
+
+export function showTaskAssignedNotification(taskTitle: string): void {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification('INCLAVE ERP · Задачи', {
+    body: `Вам назначена задача: «${taskTitle}»`,
+    icon: '/icons/inclave-192.png',
+    tag: `inclave-task-assigned-${Date.now()}`,
+  });
+}
+
+export function showDirectorTaskAssignedNotification(taskTitle: string): void {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification('INCLAVE ERP · Product Office', {
+    body: `Назначена задача: «${taskTitle}»`,
+    icon: '/icons/inclave-192.png',
+    tag: `inclave-director-task-assigned-${Date.now()}`,
+  });
+}
+
+export function showDirectorTaskCompletedNotification(taskTitle: string): void {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification('INCLAVE ERP · Product Office', {
+    body: `Задача выполнена: «${taskTitle}»`,
+    icon: '/icons/inclave-192.png',
+    tag: `inclave-director-task-done-${Date.now()}`,
+  });
+}

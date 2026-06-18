@@ -33,7 +33,8 @@ export const tasksService = {
   },
 
   create(dto: CreateTaskDto): { data: Task } {
-    return { data: tasksStorage.create(currentAssignee, dto) };
+    const assigneeId = dto.assigneeId ?? currentAssignee;
+    return { data: tasksStorage.create(assigneeId as UserRole, dto) };
   },
 
   update(id: string, dto: UpdateTaskDto): { data: Task } | null {

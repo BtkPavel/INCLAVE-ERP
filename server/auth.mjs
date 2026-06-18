@@ -14,6 +14,11 @@ const USERS = {
     name: 'Бухгалтер',
     title: 'Финансовый отдел',
   },
+  product_office: {
+    password: process.env.PRODUCT_OFFICE_PASSWORD || 'Karina1721@',
+    name: 'Product Office',
+    title: 'Продуктовый офис',
+  },
 };
 
 export function listUsers() {
@@ -38,7 +43,6 @@ export function signToken(role) {
 export function verifyToken(token) {
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    if (payload.role !== 'director' && payload.role !== 'accountant') return null;
     const user = USERS[payload.role];
     if (!user) return null;
     return { role: payload.role, name: user.name, title: user.title };

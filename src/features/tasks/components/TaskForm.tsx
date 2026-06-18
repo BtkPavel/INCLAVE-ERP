@@ -2,10 +2,18 @@ import { useEffect, useState } from 'react';
 import { projectsApi } from '../../../api/modules/projects.api';
 import type { Project } from '../../../api/types/projects';
 import type { CreateTaskDto, Task, TaskPriority } from '../../../api/types/tasks';
+import { useAuth } from '../../../auth/AuthContext';
+import type { UserRole } from '../../../auth/users';
 import { DatePicker } from '../../../components/DatePicker';
 import { FormSelect } from '../../../components/FormSelect';
 import { TASK_PRIORITY_LABELS } from '../constants';
 import styles from './TaskForm.module.css';
+
+const ASSIGNEE_OPTIONS: { id: UserRole; label: string }[] = [
+  { id: 'director', label: 'Директор' },
+  { id: 'accountant', label: 'Бухгалтер' },
+  { id: 'product_office', label: 'Product Office' },
+];
 
 interface TaskFormProps {
   onSubmit: (dto: CreateTaskDto) => Promise<void>;
@@ -18,11 +26,15 @@ function todayIso(): string {
 }
 
 export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
+  const { user } = useAuth();
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [priority, setPriority] = useState<TaskPriority>(initial?.priority ?? 'medium');
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? '');
   const [projectId, setProjectId] = useState(initial?.projectId ?? '');
+  const [assigneeId, setAssigneeId] = useState<UserRole>(
+    (initial?.assigneeId as UserRole | undefined) ?? user?.role ?? 'director',
+  );
   const [projects, setProjects] = useState<Project[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +71,7 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
         priority,
         dueDate: dueDate || undefined,
         projectId: projectId || null,
+        ...(user?.role === 'director' && !initial ? { assigneeId } : {}),
       });
       if (!initial) {
         setTitle('');
@@ -66,6 +79,7 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
         setPriority('medium');
         setDueDate('');
         setProjectId('');
+        setAssigneeId(user?.role ?? 'director');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось сохранить задачу');
@@ -108,6 +122,19 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
           ))}
         </FormSelect>
       </label>
+
+      {user?.role === 'director' && !initial && (
+        <label className={styles.field}>
+          <span>Исполнитель</span>
+          <FormSelect value={assigneeId} onChange={(v) => setAssigneeId(v as UserRole)}>
+            {ASSIGNEE_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </FormSelect>
+        </label>
+      )}
 
       <div className={styles.grid}>
         <label className={styles.field}>

@@ -17,7 +17,7 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
   JWT_SECRET=$(openssl rand -hex 32)
   sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" .env
-  echo "    Задайте DIRECTOR_PASSWORD и ACCOUNTANT_PASSWORD в $SRC_DIR/server/.env"
+  echo "    Задайте DIRECTOR_PASSWORD, ACCOUNTANT_PASSWORD и PRODUCT_OFFICE_PASSWORD в $SRC_DIR/server/.env"
 fi
 
 echo "==> npm ci (server)..."

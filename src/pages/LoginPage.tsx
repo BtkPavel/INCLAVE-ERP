@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import type { UserRole } from '../auth/users';
+import { getDefaultPath } from '../auth/permissions';
 import {
   requestNotificationPermission,
   showWelcomeNotification,
@@ -21,6 +22,11 @@ const ROLES: { id: UserRole; label: string; description: string }[] = [
     label: 'Бухгалтер',
     description: 'Финансовый учёт и отчётность',
   },
+  {
+    id: 'product_office',
+    label: 'Product Office',
+    description: 'Проекты, календарь и задачи',
+  },
 ];
 
 export function LoginPage() {
@@ -30,7 +36,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={getDefaultPath(user.role)} replace />;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

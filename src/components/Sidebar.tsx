@@ -1,14 +1,7 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { getNavItemsForRole } from '../auth/permissions';
 import styles from './Sidebar.module.css';
-
-const NAV_ITEMS = [
-  { to: '/', label: 'Обзор', icon: '◈', end: true },
-  { to: '/projects', label: 'Проекты', icon: '▣' },
-  { to: '/calendar', label: 'Календарь', icon: '◷' },
-  { to: '/tasks', label: 'Задачи', icon: '☑' },
-  { to: '/finance', label: 'Финансы', icon: '₽', end: false },
-  { to: '/hr', label: 'Кадры', icon: '◎', end: false },
-];
 
 interface SidebarProps {
   open: boolean;
@@ -16,6 +9,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const { user } = useAuth();
+  const navItems = getNavItemsForRole(user?.role ?? 'director');
   return (
     <>
       {open && (
@@ -30,7 +25,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <nav className={styles.nav}>
           <p className={styles.sectionLabel}>Модули</p>
           <ul className={styles.list}>
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}

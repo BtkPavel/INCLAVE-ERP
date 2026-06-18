@@ -497,8 +497,15 @@ function tasksForUser(role, status) {
 }
 
 app.get('/api/v1/tasks', authMiddleware, (req, res) => {
-  const { status, page, perPage } = req.query;
-  const items = tasksForUser(req.user.role, status);
+  const { status, page, perPage, assigneeId } = req.query;
+  let role = req.user.role;
+  if (assigneeId && req.user.role === 'director') {
+    const validRoles = listUsers().map((u) => u.role);
+    if (validRoles.includes(assigneeId)) {
+      role = assigneeId;
+    }
+  }
+  const items = tasksForUser(role, status);
   res.json(paginate(items, Number(page) || 1, Number(perPage) || 50));
 });
 
@@ -534,6 +541,13 @@ app.get('/api/v1/tasks/:id', authMiddleware, (req, res) => {
 app.post('/api/v1/tasks', authMiddleware, (req, res) => {
   const dto = req.body ?? {};
   const now = new Date().toISOString();
+  let assigneeId = req.user.role;
+  if (req.user.role === 'director' && dto.assigneeId) {
+    const validRoles = listUsers().map((u) => u.role);
+    if (validRoles.includes(dto.assigneeId)) {
+      assigneeId = dto.assigneeId;
+    }
+  }
   const task = {
     id: crypto.randomUUID(),
     title: String(dto.title ?? '').trim(),
@@ -542,7 +556,7 @@ app.post('/api/v1/tasks', authMiddleware, (req, res) => {
     priority: dto.priority ?? 'medium',
     projectId: dto.projectId ?? null,
     sprintId: dto.sprintId ?? null,
-    assigneeId: req.user.role,
+    assigneeId,
     dueDate: dto.dueDate ?? null,
     completedAt: null,
     createdAt: now,
@@ -552,6 +566,32 @@ app.post('/api/v1/tasks', authMiddleware, (req, res) => {
   tasks.push(task);
   saveTasks(tasks);
   res.status(201).json({ data: task });
+});
+
+app.post('/api/v1/tasks/:id/assign', authMiddleware, (req, res) => {
+  if (req.user.role !== 'director') {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Назначать исполнителя может только директор' });
+    return;
+  }
+
+  const { assigneeId } = req.body ?? {};
+  const validRoles = listUsers().map((u) => u.role);
+  if (!assigneeId || !validRoles.includes(assigneeId)) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Укажите корректного исполнителя' });
+    return;
+  }
+
+  const tasks = loadTasks();
+  const idx = tasks.findIndex((t) => t.id === req.params.id);
+  if (idx === -1) return notFound(res);
+
+  tasks[idx] = {
+    ...tasks[idx],
+    assigneeId,
+    updatedAt: new Date().toISOString(),
+  };
+  saveTasks(tasks);
+  res.json({ data: tasks[idx] });
 });
 
 app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
