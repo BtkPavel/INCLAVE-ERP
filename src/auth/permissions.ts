@@ -33,6 +33,6 @@ export function getNavItemsForRole(role: UserRole) {
   return all;
 }
 
-export function canUseAssistant(role: UserRole): boolean {
-  return role !== 'product_office';
+export function canUseAssistant(_role: UserRole): boolean {
+  return true;
 }
