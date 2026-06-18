@@ -36,7 +36,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to={getDefaultPath(user.role)} replace />;
+  if (user) return <Navigate to={getDefaultPath(user.role, user.permissions)} replace />;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

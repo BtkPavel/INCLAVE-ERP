@@ -1,22 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { isRoleAccessBlocked } from './access.mjs';
+import { getRolePassword } from './settings.mjs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-inclave-secret-change-me';
 const TOKEN_TTL = '30d';
 
 const USERS = {
   director: {
-    password: process.env.DIRECTOR_PASSWORD || 'inclave-dir',
     name: 'Директор',
     title: 'Руководитель предприятия',
   },
   accountant: {
-    password: process.env.ACCOUNTANT_PASSWORD || 'inclave-buh',
     name: 'Бухгалтер',
     title: 'Финансовый отдел',
   },
   product_office: {
-    password: process.env.PRODUCT_OFFICE_PASSWORD || 'Karina1721@',
     name: 'Product Office',
     title: 'Продуктовый офис',
   },
@@ -33,7 +31,8 @@ export function listUsers() {
 
 export function authenticate(role, password) {
   const user = USERS[role];
-  if (!user || user.password !== password) return null;
+  const expected = getRolePassword(role);
+  if (!user || !expected || expected !== password) return null;
   if (isRoleAccessBlocked(role)) return null;
   return { role, name: user.name, title: user.title };
 }

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { authApi } from '../../../api/modules/auth.api';
 import { projectsApi } from '../../../api/modules/projects.api';
 import { tasksApi } from '../../../api/modules/tasks.api';
 import type { Project } from '../../../api/types/projects';
 import type { Sprint } from '../../../api/types/sprints';
 import type { Task, TaskStatus } from '../../../api/types/tasks';
+import type { UserRole } from '../../../auth/users';
 import { ApiError } from '../../../api/errors';
 import { TASK_STATUS_LABELS } from '../../tasks/constants';
 import { TaskPriorityBadge } from '../../tasks/components/TaskPriorityBadge';
@@ -28,6 +30,17 @@ const SPRINT_STATUS_LABELS: Record<Sprint['status'], string> = {
   active: 'Активный',
   completed: 'Завершён',
 };
+
+const ASSIGNEE_LABELS: Record<string, string> = {
+  director: 'Директор',
+  accountant: 'Бухгалтер',
+  product_office: 'Product Office',
+};
+
+function assigneeLabel(assigneeId: string | null): string {
+  if (!assigneeId) return 'Общая';
+  return ASSIGNEE_LABELS[assigneeId] ?? assigneeId;
+}
 
 function formatDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('ru-RU', {
@@ -55,6 +68,7 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const [sprintTaskCounts, setSprintTaskCounts] = useState<Record<string, number>>({});
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [assignees, setAssignees] = useState<Array<{ role: UserRole; name: string }>>([]);
 
   const activeSprint = sprints.find((s) => s.status === 'active');
   const plannedSprints = sprints.filter((s) => s.status === 'planned');
@@ -93,8 +107,27 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
   }, [project.id]);
 
   useEffect(() => {
+    void authApi
+      .listUsers()
+      .then((res) => setAssignees(res.data.map((user) => ({ role: user.role, name: user.name }))))
+      .catch(() => setAssignees([]));
+  }, []);
+
+  useEffect(() => {
     void reload();
   }, [reload]);
+
+  async function handleAssignTask(taskId: string, assigneeId: UserRole) {
+    setBusy(true);
+    try {
+      await tasksApi.assign(taskId, { assigneeId });
+      await reload();
+    } catch (err) {
+      setError(ApiError.isApiError(err) ? err.message : 'Не удалось назначить исполнителя');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleSaveTask(id: string, dto: Parameters<typeof tasksApi.update>[1]) {
     await tasksApi.update(id, dto);
@@ -313,7 +346,8 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
                       <span className={styles.taskDescPreview}>{task.description}</span>
                     )}
                     <span className={styles.taskMeta}>
-                      <TaskPriorityBadge priority={task.priority} /> · {TASK_STATUS_LABELS[task.status]}
+                      <TaskPriorityBadge priority={task.priority} /> · {TASK_STATUS_LABELS[task.status]} ·{' '}
+                      {assigneeLabel(task.assigneeId)}
                     </span>
                   </button>
                   {canEdit && assignableSprints.length > 0 ? (
@@ -458,6 +492,27 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
                         </button>
                         <div className={styles.boardCardFooter}>
                           <TaskPriorityBadge priority={task.priority} />
+                          {canEdit && task.sprintId && (
+                            <label className={styles.assigneeField}>
+                              <span className={styles.assigneeLabel}>Ответственный</span>
+                              <select
+                                className={styles.assigneeSelect}
+                                value={task.assigneeId ?? ''}
+                                disabled={busy}
+                                onChange={(e) => {
+                                  const value = e.target.value as UserRole;
+                                  if (value) void handleAssignTask(task.id, value);
+                                }}
+                              >
+                                <option value="">Не назначен</option>
+                                {assignees.map((user) => (
+                                  <option key={user.role} value={user.role}>
+                                    {user.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
                           {canEdit && (
                             <div className={styles.boardCardActions}>
                               <button

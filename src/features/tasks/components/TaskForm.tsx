@@ -71,7 +71,7 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
         priority,
         dueDate: dueDate || undefined,
         projectId: projectId || null,
-        ...(user?.role === 'director' && !initial ? { assigneeId } : {}),
+        ...(user && !initial ? { assigneeId } : {}),
       });
       if (!initial) {
         setTitle('');
@@ -123,7 +123,7 @@ export function TaskForm({ onSubmit, initial, onCancel }: TaskFormProps) {
         </FormSelect>
       </label>
 
-      {user?.role === 'director' && !initial && (
+      {user && !initial && (
         <label className={styles.field}>
           <span>Исполнитель</span>
           <FormSelect value={assigneeId} onChange={(v) => setAssigneeId(v as UserRole)}>

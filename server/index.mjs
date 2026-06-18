@@ -12,6 +12,17 @@ import {
   nextSprintNumber,
   sprintsForProject,
 } from './sprints.mjs';
+import {
+  canViewCalendar,
+  getPermissionsForRole,
+  grantProjectAccess,
+  hasProjectAccess,
+  loadAccessSettings,
+  revokeProjectAccess,
+  setCalendarSharing,
+  setModuleAccess,
+  setRolePassword,
+} from './settings.mjs';
 import { runAssistantChat, clearStoredAgent } from './assistant.mjs';
 
 const app = express();
@@ -34,6 +45,29 @@ function notFound(res) {
   res.status(404).json({ code: 'NOT_FOUND', message: 'Не найдено' });
 }
 
+function requireDirector(req, res, next) {
+  if (req.user.role !== 'director') {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Доступно только директору' });
+    return;
+  }
+  next();
+}
+
+function ensureProjectAccess(req, res, projectId) {
+  if (!hasProjectAccess(req.user.role, projectId)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет доступа к проекту' });
+    return false;
+  }
+  return true;
+}
+
+function canEditProjectTask(user, task, project) {
+  if (user.role === 'director') return true;
+  if (task.projectId && hasProjectAccess(user.role, task.projectId)) return true;
+  if (project && canManageProject(user, project)) return true;
+  return task.assigneeId === user.role;
+}
+
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
 app.post('/api/v1/auth/login', (req, res) => {
@@ -51,8 +85,9 @@ app.post('/api/v1/auth/login', (req, res) => {
     return;
   }
   const accessToken = signToken(user.role);
+  const permissions = getPermissionsForRole(user.role);
   res.json({
-    user: { role: user.role, name: user.name, title: user.title },
+    user: { role: user.role, name: user.name, title: user.title, permissions },
     tokens: {
       accessToken,
       refreshToken: accessToken,
@@ -66,11 +101,73 @@ app.post('/api/v1/auth/logout', authMiddleware, (_req, res) => {
 });
 
 app.get('/api/v1/auth/me', authMiddleware, (req, res) => {
-  res.json({ data: { role: req.user.role, name: req.user.name, title: req.user.title } });
+  res.json({
+    data: {
+      role: req.user.role,
+      name: req.user.name,
+      title: req.user.title,
+      permissions: getPermissionsForRole(req.user.role),
+    },
+  });
 });
 
 app.get('/api/v1/auth/users', authMiddleware, (_req, res) => {
   res.json({ data: listUsers() });
+});
+
+function projectExists(projectId) {
+  return loadJson(KEYS.projects, []).some((project) => project.id === projectId);
+}
+
+// ─── Settings ───────────────────────────────────────────────────────────────
+
+app.get('/api/v1/settings', authMiddleware, requireDirector, (_req, res) => {
+  res.json({ data: loadAccessSettings() });
+});
+
+app.patch('/api/v1/settings/passwords', authMiddleware, requireDirector, (req, res) => {
+  const { role, password } = req.body ?? {};
+  const validRoles = listUsers().map((user) => user.role);
+  if (!role || !validRoles.includes(role) || !password || String(password).length < 4) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Укажите роль и пароль (минимум 4 символа)' });
+    return;
+  }
+  setRolePassword(role, String(password));
+  res.json({ data: { role, updated: true } });
+});
+
+app.post('/api/v1/settings/project-access', authMiddleware, requireDirector, (req, res) => {
+  const { projectId, role, granted } = req.body ?? {};
+  const validRoles = listUsers().map((user) => user.role);
+  if (!projectId || !validRoles.includes(role)) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Укажите проект и роль' });
+    return;
+  }
+  if (!projectExists(projectId)) return notFound(res);
+  const data = granted ? grantProjectAccess(projectId, role) : revokeProjectAccess(projectId, role);
+  res.json({ data });
+});
+
+app.post('/api/v1/settings/calendar-sharing', authMiddleware, requireDirector, (req, res) => {
+  const { ownerRole, viewerRole, granted } = req.body ?? {};
+  const validRoles = listUsers().map((user) => user.role);
+  if (!validRoles.includes(ownerRole) || !validRoles.includes(viewerRole)) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Укажите корректные роли' });
+    return;
+  }
+  const data = setCalendarSharing(ownerRole, viewerRole, granted !== false);
+  res.json({ data });
+});
+
+app.patch('/api/v1/settings/module-access', authMiddleware, requireDirector, (req, res) => {
+  const { role, modules } = req.body ?? {};
+  const validRoles = listUsers().map((user) => user.role);
+  if (!role || !validRoles.includes(role) || !modules || typeof modules !== 'object') {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Укажите роль и права модулей' });
+    return;
+  }
+  const data = setModuleAccess(role, modules);
+  res.json({ data });
 });
 
 // ─── Calendar ───────────────────────────────────────────────────────────────
@@ -100,14 +197,24 @@ function filterEvents(events, from, to) {
 
 app.get('/api/v1/calendar/events', authMiddleware, (req, res) => {
   const { from, to, page, perPage } = req.query;
-  const events = filterEvents(loadEvents(), from, to);
+  const events = filterEvents(loadEvents(), from, to).filter(
+    (event) =>
+      event.createdBy === req.user.role ||
+      canViewCalendar(req.user.role, event.createdBy),
+  );
   res.json(paginate(events, Number(page) || 1, Number(perPage) || 500));
 });
 
 app.get('/api/v1/calendar/events/upcoming', authMiddleware, (req, res) => {
   const limit = Number(req.query.limit) || 10;
   const now = new Date().toISOString();
-  const data = filterEvents(loadEvents(), now).slice(0, limit);
+  const data = filterEvents(loadEvents(), now)
+    .filter(
+      (event) =>
+        event.createdBy === req.user.role ||
+        canViewCalendar(req.user.role, event.createdBy),
+    )
+    .slice(0, limit);
   res.json({ data });
 });
 
@@ -145,6 +252,10 @@ app.patch('/api/v1/calendar/events/:id', authMiddleware, (req, res) => {
   const events = loadEvents();
   const idx = events.findIndex((e) => e.id === req.params.id);
   if (idx === -1) return notFound(res);
+  if (events[idx].createdBy !== req.user.role && req.user.role !== 'director') {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Можно редактировать только свой календарь' });
+    return;
+  }
   const dto = req.body ?? {};
   events[idx] = {
     ...events[idx],
@@ -160,6 +271,12 @@ app.patch('/api/v1/calendar/events/:id', authMiddleware, (req, res) => {
 
 app.delete('/api/v1/calendar/events/:id', authMiddleware, (req, res) => {
   const events = loadEvents();
+  const event = events.find((e) => e.id === req.params.id);
+  if (!event) return notFound(res);
+  if (event.createdBy !== req.user.role && req.user.role !== 'director') {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Можно удалять только свой календарь' });
+    return;
+  }
   const next = events.filter((e) => e.id !== req.params.id);
   if (next.length === events.length) return notFound(res);
   saveEvents(next);
@@ -250,13 +367,17 @@ app.get('/api/v1/projects/stats', authMiddleware, (_req, res) => {
 
 app.get('/api/v1/projects', authMiddleware, (req, res) => {
   const { category, status, page, perPage } = req.query;
-  const items = filterProjects(loadNormalizedProjects(), { category, status });
+  let items = filterProjects(loadNormalizedProjects(), { category, status });
+  if (req.user.role !== 'director') {
+    items = items.filter((project) => hasProjectAccess(req.user.role, project.id));
+  }
   res.json(paginate(items, Number(page) || 1, Number(perPage) || 50));
 });
 
 app.get('/api/v1/projects/:id', authMiddleware, (req, res) => {
   const project = loadNormalizedProjects().find((p) => p.id === req.params.id);
   if (!project) return notFound(res);
+  if (!ensureProjectAccess(req, res, project.id)) return;
   res.json({ data: project });
 });
 
@@ -381,12 +502,10 @@ app.delete('/api/v1/projects/:id', authMiddleware, (req, res) => {
 app.get('/api/v1/projects/:id/tasks', authMiddleware, (req, res) => {
   const project = findProject(req.params.id);
   if (!project) return notFound(res);
+  if (!ensureProjectAccess(req, res, project.id)) return;
 
   const { sprintId } = req.query;
   let tasks = loadTasks().filter((t) => t.projectId === project.id);
-  if (req.user.role !== 'director') {
-    tasks = tasks.filter((t) => t.assigneeId === req.user.role);
-  }
   if (sprintId === 'backlog') {
     tasks = tasks.filter((t) => !t.sprintId);
   } else if (sprintId) {
@@ -398,6 +517,7 @@ app.get('/api/v1/projects/:id/tasks', authMiddleware, (req, res) => {
 app.get('/api/v1/projects/:id/sprints', authMiddleware, (req, res) => {
   const project = findProject(req.params.id);
   if (!project) return notFound(res);
+  if (!ensureProjectAccess(req, res, project.id)) return;
   res.json({ data: sprintsForProject(loadSprints(), project.id) });
 });
 
@@ -549,13 +669,17 @@ app.get('/api/v1/tasks/:id', authMiddleware, (req, res) => {
 app.post('/api/v1/tasks', authMiddleware, (req, res) => {
   const dto = req.body ?? {};
   const now = new Date().toISOString();
+  const validRoles = listUsers().map((u) => u.role);
   let assigneeId = req.user.role;
-  if (req.user.role === 'director' && dto.assigneeId) {
-    const validRoles = listUsers().map((u) => u.role);
-    if (validRoles.includes(dto.assigneeId)) {
-      assigneeId = dto.assigneeId;
-    }
+
+  if (dto.projectId && !dto.sprintId) {
+    assigneeId = null;
+  } else if (dto.assigneeId && validRoles.includes(dto.assigneeId)) {
+    assigneeId = dto.assigneeId;
+  } else if (!dto.projectId && req.user.role !== 'director') {
+    assigneeId = req.user.role;
   }
+
   const task = {
     id: crypto.randomUUID(),
     title: String(dto.title ?? '').trim(),
@@ -577,11 +701,6 @@ app.post('/api/v1/tasks', authMiddleware, (req, res) => {
 });
 
 app.post('/api/v1/tasks/:id/assign', authMiddleware, (req, res) => {
-  if (req.user.role !== 'director') {
-    res.status(403).json({ code: 'FORBIDDEN', message: 'Назначать исполнителя может только директор' });
-    return;
-  }
-
   const { assigneeId } = req.body ?? {};
   const validRoles = listUsers().map((u) => u.role);
   if (!assigneeId || !validRoles.includes(assigneeId)) {
@@ -592,6 +711,16 @@ app.post('/api/v1/tasks/:id/assign', authMiddleware, (req, res) => {
   const tasks = loadTasks();
   const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return notFound(res);
+  const task = tasks[idx];
+  const project = task.projectId ? findProject(task.projectId) : null;
+  if (
+    req.user.role !== 'director' &&
+    !(task.projectId && hasProjectAccess(req.user.role, task.projectId)) &&
+    task.assigneeId !== req.user.role
+  ) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет прав назначить исполнителя' });
+    return;
+  }
 
   tasks[idx] = {
     ...tasks[idx],
@@ -604,10 +733,16 @@ app.post('/api/v1/tasks/:id/assign', authMiddleware, (req, res) => {
 
 app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
   const tasks = loadTasks();
-  const idx = tasks.findIndex((t) => t.id === req.params.id && t.assigneeId === req.user.role);
+  const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return notFound(res);
   const current = tasks[idx];
+  const project = current.projectId ? findProject(current.projectId) : null;
+  if (!canEditProjectTask(req.user, current, project)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет прав редактировать задачу' });
+    return;
+  }
   const dto = req.body ?? {};
+  const validRoles = listUsers().map((u) => u.role);
   const nextStatus = dto.status ?? current.status;
   const completedAt =
     nextStatus === 'done' && current.status !== 'done'
@@ -615,6 +750,14 @@ app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
       : nextStatus !== 'done'
         ? null
         : current.completedAt;
+  let nextAssigneeId = current.assigneeId;
+  if (dto.assigneeId !== undefined) {
+    if (dto.assigneeId === null) {
+      nextAssigneeId = null;
+    } else if (validRoles.includes(dto.assigneeId)) {
+      nextAssigneeId = dto.assigneeId;
+    }
+  }
   tasks[idx] = {
     ...current,
     ...dto,
@@ -623,6 +766,7 @@ app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
     status: nextStatus,
     projectId: dto.projectId !== undefined ? dto.projectId : current.projectId,
     sprintId: dto.sprintId !== undefined ? dto.sprintId : current.sprintId,
+    assigneeId: nextAssigneeId,
     completedAt,
     updatedAt: new Date().toISOString(),
   };
@@ -632,8 +776,14 @@ app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
 
 app.post('/api/v1/tasks/:id/complete', authMiddleware, (req, res) => {
   const tasks = loadTasks();
-  const idx = tasks.findIndex((t) => t.id === req.params.id && t.assigneeId === req.user.role);
+  const idx = tasks.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return notFound(res);
+  const current = tasks[idx];
+  const project = current.projectId ? findProject(current.projectId) : null;
+  if (!canEditProjectTask(req.user, current, project)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет прав завершить задачу' });
+    return;
+  }
   tasks[idx] = {
     ...tasks[idx],
     status: 'done',
@@ -646,8 +796,14 @@ app.post('/api/v1/tasks/:id/complete', authMiddleware, (req, res) => {
 
 app.delete('/api/v1/tasks/:id', authMiddleware, (req, res) => {
   const tasks = loadTasks();
-  const next = tasks.filter((t) => !(t.id === req.params.id && t.assigneeId === req.user.role));
-  if (next.length === tasks.length) return notFound(res);
+  const current = tasks.find((t) => t.id === req.params.id);
+  if (!current) return notFound(res);
+  const project = current.projectId ? findProject(current.projectId) : null;
+  if (!canEditProjectTask(req.user, current, project)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет прав удалить задачу' });
+    return;
+  }
+  const next = tasks.filter((t) => t.id !== req.params.id);
   saveTasks(next);
   res.status(204).end();
 });
@@ -809,14 +965,6 @@ app.get('/api/v1/finance/payment-calendar', authMiddleware, (req, res) => {
 });
 
 // ─── HR (Кадры) ─────────────────────────────────────────────────────────────
-
-function requireDirector(req, res, next) {
-  if (req.user.role !== 'director') {
-    res.status(403).json({ code: 'FORBIDDEN', message: 'Доступно только директору' });
-    return;
-  }
-  next();
-}
 
 function loadEmployees() {
   ensureSeedEmployees(loadJson, saveJson, KEYS.employees);

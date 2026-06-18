@@ -1,9 +1,12 @@
+import type { UserPermissions } from '../api/types/auth';
+
 export type UserRole = 'director' | 'accountant' | 'product_office';
 
 export interface User {
   role: UserRole;
   name: string;
   title: string;
+  permissions?: UserPermissions;
 }
 
 const USERS: Record<UserRole, { password: string; name: string; title: string }> = {

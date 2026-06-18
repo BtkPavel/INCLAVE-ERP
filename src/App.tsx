@@ -20,6 +20,7 @@ import { HrPage } from './pages/HrPage';
 import { HrOutsourcePage } from './pages/HrOutsourcePage';
 import { HrStaffPage } from './pages/HrStaffPage';
 import { TasksPage } from './pages/TasksPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 function AppRoutes() {
   return (
@@ -52,6 +53,7 @@ function AppRoutes() {
                   <Route path="staff" element={<HrStaffPage />} />
                   <Route path="outsource" element={<HrOutsourcePage />} />
                 </Route>
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>

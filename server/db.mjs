@@ -46,4 +46,6 @@ export const KEYS = {
   sprints: 'inclave-erp-project-sprints',
   employees: 'inclave-erp-hr-employees',
   assistantAgents: 'inclave-erp-cursor-agents',
+  accessSettings: 'inclave-erp-access-settings',
+  passwords: 'inclave-erp-passwords',
 };

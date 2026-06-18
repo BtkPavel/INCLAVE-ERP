@@ -11,6 +11,7 @@ import { authApi } from '../api/modules/auth.api';
 import { apiClient, clearAuthToken } from '../api/client';
 import { ApiError } from '../api/errors';
 import { setTasksAssignee } from '../backend/tasks/tasksService';
+import { getDefaultPermissions } from './permissions';
 import {
   authenticate,
   clearSession,
@@ -63,7 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authApi
       .me()
       .then(({ data }) => {
-        const next: User = { role: data.role, name: data.name, title: data.title };
+        const next: User = {
+          role: data.role,
+          name: data.name,
+          title: data.title,
+          permissions: data.permissions ?? getDefaultPermissions(data.role),
+        };
         saveSession(next);
         setUser(next);
         setTasksAssignee(next.role);
@@ -80,9 +86,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (apiClient.isMockMode()) {
       const authenticated = authenticate(role, password);
       if (!authenticated) return { ok: false, error: 'Неверный пароль' };
-      saveSession(authenticated);
-      setUser(authenticated);
-      setTasksAssignee(authenticated.role);
+      const next: User = {
+        ...authenticated,
+        permissions: getDefaultPermissions(authenticated.role),
+      };
+      saveSession(next);
+      setUser(next);
+      setTasksAssignee(next.role);
       return { ok: true };
     }
 
@@ -92,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: session.user.role,
         name: session.user.name,
         title: session.user.title,
+        permissions: session.user.permissions ?? getDefaultPermissions(session.user.role),
       };
       saveSession(next);
       setUser(next);

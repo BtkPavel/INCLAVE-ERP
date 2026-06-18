@@ -494,6 +494,29 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.assigneeField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.assigneeLabel {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.assigneeSelect {
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border-solid);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 0 8px;
 }
 
 .boardCardActions {

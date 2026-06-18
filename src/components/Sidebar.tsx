@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { getNavItemsForRole } from '../auth/permissions';
+import { getNavItemsForUser } from '../auth/permissions';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -10,7 +10,7 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const { user } = useAuth();
-  const navItems = getNavItemsForRole(user?.role ?? 'director');
+  const navItems = getNavItemsForUser(user?.role ?? 'director', user?.permissions);
   return (
     <>
       {open && (

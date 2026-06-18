@@ -15,8 +15,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
   useTaskNotifications();
 
-  if (user && !canAccessPath(user.role, location.pathname)) {
-    return <Navigate to={getDefaultPath(user.role)} replace />;
+  if (user && !canAccessPath(user.role, location.pathname, user.permissions)) {
+    return <Navigate to={getDefaultPath(user.role, user.permissions)} replace />;
   }
 
   return (
