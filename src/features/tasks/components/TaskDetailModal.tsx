@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import type { Task, TaskPriority, UpdateTaskDto } from '../../../api/types/tasks';
+import { tasksApi } from '../../../api/modules/tasks.api';
+import type { Task, TaskComment, TaskPriority, UpdateTaskDto } from '../../../api/types/tasks';
 import { DatePicker } from '../../../components/DatePicker';
 import { FormSelect } from '../../../components/FormSelect';
 import { ApiError } from '../../../api/errors';
@@ -24,6 +25,10 @@ export function TaskDetailModal({ open, task, canEdit, onClose, onSave }: TaskDe
   const [dueDate, setDueDate] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentBusy, setCommentBusy] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -39,13 +44,19 @@ export function TaskDetailModal({ open, task, canEdit, onClose, onSave }: TaskDe
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!task) return;
+    if (!task || !open) return;
     setTitle(task.title);
     setDescription(task.description ?? '');
     setPriority(task.priority);
     setDueDate(task.dueDate ?? '');
     setError(null);
-  }, [task]);
+    setCommentText('');
+    setCommentsError(null);
+    void tasksApi
+      .listComments(task.id)
+      .then((res) => setComments(res.data))
+      .catch(() => setComments([]));
+  }, [task, open]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -71,6 +82,24 @@ export function TaskDetailModal({ open, task, canEdit, onClose, onSave }: TaskDe
       setError(ApiError.isApiError(err) ? err.message : 'Не удалось сохранить задачу');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleAddComment(e: FormEvent) {
+    e.preventDefault();
+    if (!task) return;
+    const text = commentText.trim();
+    if (!text) return;
+    setCommentBusy(true);
+    setCommentsError(null);
+    try {
+      const res = await tasksApi.addComment(task.id, { text });
+      setComments((prev) => [...prev, res.data]);
+      setCommentText('');
+    } catch (err) {
+      setCommentsError(ApiError.isApiError(err) ? err.message : 'Не удалось отправить комментарий');
+    } finally {
+      setCommentBusy(false);
     }
   }
 
@@ -170,6 +199,73 @@ export function TaskDetailModal({ open, task, canEdit, onClose, onSave }: TaskDe
               )}
             </div>
           )}
+
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-solid)' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text-primary)' }}>
+              Комментарии
+            </h3>
+            {comments.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Комментариев пока нет</p>
+            ) : (
+              <ul style={{ listStyle: 'none', margin: '0 0 12px', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {comments.map((comment) => (
+                  <li
+                    key={comment.id}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border: '1px solid var(--border-solid)',
+                      background: 'var(--surface-hover)',
+                    }}
+                  >
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      {comment.authorName} ·{' '}
+                      {new Date(comment.createdAt).toLocaleString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                      {comment.text}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form onSubmit={handleAddComment} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Написать комментарий…"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid var(--border-solid)',
+                  background: 'var(--surface-hover)',
+                  color: 'var(--text-primary)',
+                  fontSize: 14,
+                  resize: 'vertical',
+                }}
+              />
+              {commentsError && (
+                <p className={formStyles.error} role="alert">
+                  {commentsError}
+                </p>
+              )}
+              <button
+                type="submit"
+                className={formStyles.submitBtn}
+                disabled={commentBusy || !commentText.trim()}
+                style={{ alignSelf: 'flex-end' }}
+              >
+                {commentBusy ? 'Отправка…' : 'Комментировать'}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>,

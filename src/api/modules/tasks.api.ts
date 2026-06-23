@@ -1,8 +1,10 @@
 import type { PaginatedResponse } from '../types/common';
 import type {
   AssignTaskDto,
+  CreateTaskCommentDto,
   CreateTaskDto,
   Task,
+  TaskComment,
   TaskListParams,
   TaskStats,
   UpdateTaskDto,
@@ -88,5 +90,13 @@ export const tasksApi = {
       return Promise.resolve(tasksService.listWithDueDate());
     }
     return apiClient.get(`${BASE}/with-due-date`);
+  },
+
+  listComments(taskId: string): Promise<{ data: TaskComment[] }> {
+    return apiClient.get(`${BASE}/${taskId}/comments`);
+  },
+
+  addComment(taskId: string, dto: CreateTaskCommentDto): Promise<{ data: TaskComment }> {
+    return apiClient.post(`${BASE}/${taskId}/comments`, dto);
   },
 };

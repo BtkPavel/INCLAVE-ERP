@@ -1,96 +1,124 @@
-import { useEffect } from 'react';
-import { tasksApi } from '../api/modules/tasks.api';
-import type { Task } from '../api/types/tasks';
+import { useEffect, useState } from 'react';
+import { notificationsApi } from '../api/modules/notifications.api';
+import type { AppNotification } from '../api/types/notifications';
 import { useAuth } from '../auth/AuthContext';
 import {
   getNotificationState,
-  showDirectorTaskAssignedNotification,
-  showDirectorTaskCompletedNotification,
-  showTaskAssignedNotification,
+  requestNotificationPermission,
+  showAppNotification,
+  showWelcomeNotification,
+  type NotificationPermissionState,
 } from './notifications';
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 15_000;
+const SEEN_KEY = 'inclave-seen-notification-ids';
+const ENABLED_AT_KEY = 'inclave-notifications-enabled-at';
 
-interface TaskSnapshot {
-  status: string;
-  updatedAt: string;
-}
-
-type SnapshotMap = Record<string, TaskSnapshot>;
-
-function loadSnapshot(key: string): SnapshotMap {
+function loadSeenIds(): Set<string> {
   try {
-    return JSON.parse(localStorage.getItem(key) ?? '{}') as SnapshotMap;
+    const raw = localStorage.getItem(SEEN_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
   } catch {
-    return {};
+    return new Set();
   }
 }
 
-function saveSnapshot(key: string, snapshot: SnapshotMap): void {
-  localStorage.setItem(key, JSON.stringify(snapshot));
+function saveSeenIds(ids: Set<string>): void {
+  const list = [...ids].slice(-500);
+  localStorage.setItem(SEEN_KEY, JSON.stringify(list));
 }
 
-function buildSnapshot(tasks: Task[]): SnapshotMap {
-  return Object.fromEntries(
-    tasks.map((task) => [task.id, { status: task.status, updatedAt: task.updatedAt }]),
-  );
+function notificationTitle(type: AppNotification['type']): string {
+  if (type === 'task_assigned') return 'INCLAVE ERP · Назначение';
+  if (type === 'task_comment') return 'INCLAVE ERP · Комментарий';
+  return 'INCLAVE ERP · Статус задачи';
 }
 
-function processChanges(
-  role: 'director' | 'product_office',
-  tasks: Task[],
-  previous: SnapshotMap,
-  isInitial: boolean,
-): void {
-  if (isInitial) return;
-
-  for (const task of tasks) {
-    const old = previous[task.id];
-    if (!old) {
-      if (role === 'product_office') {
-        showTaskAssignedNotification(task.title);
-      } else {
-        showDirectorTaskAssignedNotification(task.title);
-      }
-      continue;
-    }
-
-    if (role === 'director' && old.status !== 'done' && task.status === 'done') {
-      showDirectorTaskCompletedNotification(task.title);
-    }
-  }
-}
-
-export function useTaskNotifications(): void {
+export function useNotifications(): {
+  unread: number;
+  permission: NotificationPermissionState;
+  refresh: () => Promise<void>;
+} {
   const { user } = useAuth();
+  const [unread, setUnread] = useState(0);
+  const [permission, setPermission] = useState<NotificationPermissionState>('default');
+
+  useEffect(() => {
+    setPermission(getNotificationState());
+  }, []);
+
+  async function poll(): Promise<void> {
+    if (!user || apiClientDisabled()) return;
+    try {
+      const response = await notificationsApi.list();
+      setUnread(response.meta.unread);
+      if (getNotificationState() !== 'granted') return;
+
+      const seen = loadSeenIds();
+      const enabledAt = localStorage.getItem(ENABLED_AT_KEY);
+      let changed = false;
+      const toMarkRead: string[] = [];
+
+      for (const item of response.data) {
+        if (seen.has(item.id)) continue;
+        seen.add(item.id);
+        changed = true;
+
+        if (!item.read) {
+          const isAfterEnable = !enabledAt || new Date(item.createdAt) > new Date(enabledAt);
+          if (isAfterEnable) {
+            showAppNotification(notificationTitle(item.type), item.message, `inclave-notif-${item.id}`);
+            toMarkRead.push(item.id);
+          }
+        }
+      }
+      if (changed) {
+        saveSeenIds(seen);
+        if (toMarkRead.length > 0) {
+          const result = await notificationsApi.markRead(toMarkRead);
+          setUnread(result.data.unread);
+        }
+      }
+    } catch {
+      // ignore polling errors
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
-    if (user.role !== 'director' && user.role !== 'product_office') return;
-    if (getNotificationState() !== 'granted') return;
-
-    const storageKey = `inclave-task-snapshot-${user.role}`;
-    let previous = loadSnapshot(storageKey);
-    let isInitial = Object.keys(previous).length === 0;
-
-    async function poll(): Promise<void> {
-      try {
-        const response = await tasksApi.list({
-          perPage: 200,
-          ...(user!.role === 'director' ? { assigneeId: 'product_office' } : {}),
-        });
-        const tasks = response.data;
-        processChanges(user!.role as 'director' | 'product_office', tasks, previous, isInitial);
-        previous = buildSnapshot(tasks);
-        saveSnapshot(storageKey, previous);
-        isInitial = false;
-      } catch {
-        // ignore polling errors
-      }
-    }
-
     void poll();
     const timer = window.setInterval(() => void poll(), POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [user]);
+
+  return { unread, permission, refresh: poll };
+}
+
+function apiClientDisabled(): boolean {
+  return import.meta.env.VITE_API_MOCK === 'true';
+}
+
+export function useNotificationBell() {
+  const { user } = useAuth();
+  const { unread, permission, refresh } = useNotifications();
+  const [localPermission, setLocalPermission] = useState<NotificationPermissionState>(permission);
+
+  useEffect(() => {
+    setLocalPermission(permission);
+  }, [permission]);
+
+  async function enableNotifications(): Promise<void> {
+    const result = await requestNotificationPermission();
+    setLocalPermission(result);
+    if (result === 'granted' && user) {
+      localStorage.setItem(ENABLED_AT_KEY, new Date().toISOString());
+      showWelcomeNotification(user.name);
+      await refresh();
+    } else if (result === 'granted') {
+      localStorage.setItem(ENABLED_AT_KEY, new Date().toISOString());
+    }
+  }
+
+  return { unread, permission: localPermission, enableNotifications, refresh };
 }

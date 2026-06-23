@@ -8,6 +8,7 @@ import {
   showWelcomeNotification,
 } from '../notifications/notifications';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { NotificationBell } from '../components/NotificationBell';
 import { AiAssistantButton } from '../components/AiAssistantButton';
 import styles from './LoginPage.module.css';
 
@@ -63,6 +64,7 @@ export function LoginPage() {
     <div className={styles.page}>
       <div className={styles.topBar}>
         <ThemeToggle />
+        <NotificationBell />
         <AiAssistantButton />
       </div>
       <div className={styles.glow} aria-hidden />

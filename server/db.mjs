@@ -48,4 +48,6 @@ export const KEYS = {
   assistantAgents: 'inclave-erp-cursor-agents',
   accessSettings: 'inclave-erp-access-settings',
   passwords: 'inclave-erp-passwords',
+  notifications: 'inclave-erp-notifications',
+  taskComments: 'inclave-erp-task-comments',
 };

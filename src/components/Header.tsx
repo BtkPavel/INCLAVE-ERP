@@ -1,6 +1,7 @@
 import { useAuth } from '../auth/AuthContext';
 import { canUseAssistant } from '../auth/permissions';
 import { ThemeToggle } from './ThemeToggle';
+import { NotificationBell } from './NotificationBell';
 import { AiAssistantButton } from './AiAssistantButton';
 import styles from './Header.module.css';
 
@@ -35,6 +36,7 @@ export function Header({ onMenuToggle, menuOpen }: HeaderProps) {
         <div className={styles.right}>
           <div className={styles.toolbar}>
             <ThemeToggle />
+            {user && <NotificationBell />}
             {user && canUseAssistant(user.role) && <AiAssistantButton />}
           </div>
           {user && (

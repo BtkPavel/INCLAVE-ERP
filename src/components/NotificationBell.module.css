@@ -1,0 +1,57 @@
+.bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-solid);
+  color: var(--text-secondary);
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.bell:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+
+.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-solid));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.denied {
+  opacity: 0.55;
+}
+
+.icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .bell {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+  }
+}

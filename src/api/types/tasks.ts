@@ -49,3 +49,16 @@ export type UpdateTaskDto = Partial<CreateTaskDto>;
 export interface AssignTaskDto {
   assigneeId: Id;
 }
+
+export interface TaskComment {
+  id: Id;
+  taskId: Id;
+  authorRole: Id;
+  authorName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface CreateTaskCommentDto {
+  text: string;
+}

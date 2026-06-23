@@ -24,6 +24,14 @@ import {
   setRolePassword,
 } from './settings.mjs';
 import { runAssistantChat, clearStoredAgent } from './assistant.mjs';
+import {
+  countUnreadForUser,
+  listNotificationsForUser,
+  markNotificationsRead,
+  notifyTaskAssigned,
+  notifyTaskComment,
+  notifyTaskStatusChange,
+} from './notifications.mjs';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -66,6 +74,12 @@ function canEditProjectTask(user, task, project) {
   if (task.projectId && hasProjectAccess(user.role, task.projectId)) return true;
   if (project && canManageProject(user, project)) return true;
   return task.assigneeId === user.role;
+}
+
+function canViewTask(user, task, project) {
+  if (canEditProjectTask(user, task, project)) return true;
+  if (task.projectId && hasProjectAccess(user.role, task.projectId)) return true;
+  return false;
 }
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
@@ -661,8 +675,10 @@ app.get('/api/v1/tasks/with-due-date', authMiddleware, (req, res) => {
 });
 
 app.get('/api/v1/tasks/:id', authMiddleware, (req, res) => {
-  const task = loadTasks().find((t) => t.id === req.params.id && t.assigneeId === req.user.role);
+  const task = loadTasks().find((t) => t.id === req.params.id);
   if (!task) return notFound(res);
+  const project = task.projectId ? findProject(task.projectId) : null;
+  if (!canViewTask(req.user, task, project)) return notFound(res);
   res.json({ data: task });
 });
 
@@ -697,6 +713,9 @@ app.post('/api/v1/tasks', authMiddleware, (req, res) => {
   const tasks = loadTasks();
   tasks.push(task);
   saveTasks(tasks);
+  if (task.assigneeId) {
+    notifyTaskAssigned(loadJson, saveJson, KEYS.notifications, task, req.user.role);
+  }
   res.status(201).json({ data: task });
 });
 
@@ -722,12 +741,16 @@ app.post('/api/v1/tasks/:id/assign', authMiddleware, (req, res) => {
     return;
   }
 
+  const previousAssignee = task.assigneeId;
   tasks[idx] = {
     ...tasks[idx],
     assigneeId,
     updatedAt: new Date().toISOString(),
   };
   saveTasks(tasks);
+  if (previousAssignee !== assigneeId) {
+    notifyTaskAssigned(loadJson, saveJson, KEYS.notifications, tasks[idx], req.user.role);
+  }
   res.json({ data: tasks[idx] });
 });
 
@@ -771,6 +794,20 @@ app.patch('/api/v1/tasks/:id', authMiddleware, (req, res) => {
     updatedAt: new Date().toISOString(),
   };
   saveTasks(tasks);
+  if (current.status !== nextStatus) {
+    notifyTaskStatusChange(
+      loadJson,
+      saveJson,
+      KEYS.notifications,
+      tasks[idx],
+      req.user.role,
+      current.status,
+      nextStatus,
+    );
+  }
+  if (current.assigneeId !== nextAssigneeId && nextAssigneeId) {
+    notifyTaskAssigned(loadJson, saveJson, KEYS.notifications, tasks[idx], req.user.role);
+  }
   res.json({ data: tasks[idx] });
 });
 
@@ -784,6 +821,7 @@ app.post('/api/v1/tasks/:id/complete', authMiddleware, (req, res) => {
     res.status(403).json({ code: 'FORBIDDEN', message: 'Нет прав завершить задачу' });
     return;
   }
+  const oldStatus = current.status;
   tasks[idx] = {
     ...tasks[idx],
     status: 'done',
@@ -791,6 +829,15 @@ app.post('/api/v1/tasks/:id/complete', authMiddleware, (req, res) => {
     updatedAt: new Date().toISOString(),
   };
   saveTasks(tasks);
+  notifyTaskStatusChange(
+    loadJson,
+    saveJson,
+    KEYS.notifications,
+    tasks[idx],
+    req.user.role,
+    oldStatus,
+    'done',
+  );
   res.json({ data: tasks[idx] });
 });
 
@@ -806,6 +853,81 @@ app.delete('/api/v1/tasks/:id', authMiddleware, (req, res) => {
   const next = tasks.filter((t) => t.id !== req.params.id);
   saveTasks(next);
   res.status(204).end();
+});
+
+function loadTaskComments() {
+  return loadJson(KEYS.taskComments, []);
+}
+
+function saveTaskComments(comments) {
+  saveJson(KEYS.taskComments, comments);
+}
+
+app.get('/api/v1/tasks/:id/comments', authMiddleware, (req, res) => {
+  const task = loadTasks().find((t) => t.id === req.params.id);
+  if (!task) return notFound(res);
+  const project = task.projectId ? findProject(task.projectId) : null;
+  if (!canViewTask(req.user, task, project)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет доступа к задаче' });
+    return;
+  }
+  const data = loadTaskComments()
+    .filter((comment) => comment.taskId === task.id)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  res.json({ data });
+});
+
+app.post('/api/v1/tasks/:id/comments', authMiddleware, (req, res) => {
+  const task = loadTasks().find((t) => t.id === req.params.id);
+  if (!task) return notFound(res);
+  const project = task.projectId ? findProject(task.projectId) : null;
+  if (!canViewTask(req.user, task, project)) {
+    res.status(403).json({ code: 'FORBIDDEN', message: 'Нет доступа к задаче' });
+    return;
+  }
+
+  const text = String(req.body?.text ?? '').trim();
+  if (!text) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Комментарий не может быть пустым' });
+    return;
+  }
+
+  const comment = {
+    id: crypto.randomUUID(),
+    taskId: task.id,
+    authorRole: req.user.role,
+    authorName: req.user.name,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  const comments = loadTaskComments();
+  comments.push(comment);
+  saveTaskComments(comments);
+  notifyTaskComment(
+    loadJson,
+    saveJson,
+    KEYS.notifications,
+    task,
+    req.user.role,
+    req.user.name,
+    text,
+  );
+  res.status(201).json({ data: comment });
+});
+
+app.get('/api/v1/notifications', authMiddleware, (req, res) => {
+  const { since } = req.query;
+  const data = listNotificationsForUser(loadJson, KEYS.notifications, req.user.role, since);
+  res.json({
+    data,
+    meta: { unread: countUnreadForUser(loadJson, KEYS.notifications, req.user.role) },
+  });
+});
+
+app.post('/api/v1/notifications/mark-read', authMiddleware, (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  const unread = markNotificationsRead(loadJson, saveJson, KEYS.notifications, req.user.role, ids);
+  res.json({ data: { unread } });
 });
 
 // ─── Finance ────────────────────────────────────────────────────────────────

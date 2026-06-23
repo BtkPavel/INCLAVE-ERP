@@ -5,7 +5,7 @@ import { canAccessPath, getDefaultPath } from '../auth/permissions';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { NotificationBanner } from './NotificationBanner';
-import { useTaskNotifications } from '../notifications/useTaskNotifications';
+import { useNotifications } from '../notifications/useTaskNotifications';
 import styles from './Layout.module.css';
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -13,7 +13,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const location = useLocation();
 
-  useTaskNotifications();
+  useNotifications();
 
   if (user && !canAccessPath(user.role, location.pathname, user.permissions)) {
     return <Navigate to={getDefaultPath(user.role, user.permissions)} replace />;
