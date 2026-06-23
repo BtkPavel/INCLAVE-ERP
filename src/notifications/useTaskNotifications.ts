@@ -103,10 +103,32 @@ export function useNotificationBell() {
   const { user } = useAuth();
   const { unread, permission, refresh } = useNotifications();
   const [localPermission, setLocalPermission] = useState<NotificationPermissionState>(permission);
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLocalPermission(permission);
   }, [permission]);
+
+  async function loadItems(): Promise<AppNotification[]> {
+    if (!user || apiClientDisabled()) {
+      setItems([]);
+      return [];
+    }
+    setLoading(true);
+    try {
+      const response = await notificationsApi.list();
+      const recent = response.data.slice(0, 20);
+      setItems(recent);
+      return recent;
+    } catch {
+      setItems([]);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function enableNotifications(): Promise<void> {
     const result = await requestNotificationPermission();
@@ -120,5 +142,30 @@ export function useNotificationBell() {
     }
   }
 
-  return { unread, permission: localPermission, enableNotifications, refresh };
+  async function handleClick(): Promise<void> {
+    if (localPermission !== 'granted') {
+      await enableNotifications();
+      return;
+    }
+
+    if (!open) {
+      await loadItems();
+      setOpen(true);
+      return;
+    }
+
+    setOpen(false);
+  }
+
+  return {
+    unread,
+    permission: localPermission,
+    open,
+    setOpen,
+    items,
+    loading,
+    handleClick,
+    enableNotifications,
+    refresh: loadItems,
+  };
 }
