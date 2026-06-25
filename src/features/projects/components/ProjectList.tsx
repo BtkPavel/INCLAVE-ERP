@@ -9,6 +9,7 @@ import styles from './ProjectList.module.css';
 interface ProjectListProps {
   projects: Project[];
   category: ProjectCategory;
+  basePath?: string;
 }
 
 function formatDate(iso: string | null) {
@@ -25,8 +26,8 @@ function formatMoney(value: number | null) {
   return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value);
 }
 
-export function ProjectList({ projects, category }: ProjectListProps) {
-  const basePath = category === 'investment' ? '/projects/invest' : '/projects/current';
+export function ProjectList({ projects, category, basePath }: ProjectListProps) {
+  const listPath = basePath ?? (category === 'investment' ? '/projects/invest' : '/projects/current');
 
   if (projects.length === 0) {
     return (
@@ -41,7 +42,7 @@ export function ProjectList({ projects, category }: ProjectListProps) {
     <ul className={styles.list}>
       {projects.map((project) => (
         <li key={project.id}>
-          <Link to={`${basePath}/${project.id}`} className={styles.card}>
+          <Link to={`${listPath}/${project.id}`} className={styles.card}>
           <div className={styles.cardTop}>
             <span className={styles.code}>{project.code}</span>
             <span className={`${styles.status} ${styles[`status_${project.status}`]}`}>

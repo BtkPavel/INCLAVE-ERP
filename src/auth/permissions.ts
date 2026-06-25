@@ -4,6 +4,7 @@ import type { ModulePermissions, UserPermissions } from '../api/types/auth';
 const MODULE_ROUTES: { key: keyof ModulePermissions; prefix: string }[] = [
   { key: 'overview', prefix: '/' },
   { key: 'projects', prefix: '/projects' },
+  { key: 'projects', prefix: '/products' },
   { key: 'calendar', prefix: '/calendar' },
   { key: 'tasks', prefix: '/tasks' },
   { key: 'finance', prefix: '/finance' },
@@ -83,6 +84,7 @@ export function getNavItemsForUser(
   const all = [
     { to: '/', label: 'Обзор', icon: '◈', end: true, key: 'overview' as const },
     { to: '/projects', label: 'Проекты', icon: '▣', key: 'projects' as const },
+    { to: '/products', label: 'Продукты', icon: '◇', end: false, key: 'projects' as const },
     { to: '/calendar', label: 'Календарь', icon: '◷', key: 'calendar' as const },
     { to: '/tasks', label: 'Задачи', icon: '☑', key: 'tasks' as const },
     { to: '/finance', label: 'Финансы', icon: '₽', end: false, key: 'finance' as const },

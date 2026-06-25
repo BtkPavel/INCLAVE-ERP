@@ -9,13 +9,16 @@ import { ProjectEditModal } from '../features/projects/components/ProjectEditMod
 import { ProjectHeader } from '../features/projects/components/ProjectHeader';
 import { useProjectActions } from '../hooks/useModuleApi';
 import type { ProjectsOutletContext } from './ProjectsPage';
+import type { ProductsOutletContext } from './ProductsPage';
 import styles from './ProjectDetailPage.module.css';
 
 interface ProjectDetailPageProps {
   category: ProjectCategory;
 }
 
-function listPath(category: ProjectCategory) {
+type DetailOutletContext = ProjectsOutletContext | ProductsOutletContext;
+
+function defaultListPath(category: ProjectCategory) {
   return category === 'investment' ? '/projects/invest' : '/projects/current';
 }
 
@@ -26,7 +29,7 @@ function canManageProject(userRole: string, project: Project) {
 export function ProjectDetailPage({ category }: ProjectDetailPageProps) {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { setDetailLabel } = useOutletContext<ProjectsOutletContext>();
+  const { setDetailLabel } = useOutletContext<DetailOutletContext>();
   const { user } = useAuth();
   const { update } = useProjectActions();
   const [project, setProject] = useState<Project | null>(null);
@@ -45,7 +48,7 @@ export function ProjectDetailPage({ category }: ProjectDetailPageProps) {
       .then(({ data }) => {
         if (cancelled) return;
         if (data.category !== category) {
-          navigate(listPath(data.category) + `/${data.id}`, { replace: true });
+          navigate(`${defaultListPath(data.category)}/${data.id}`, { replace: true });
           return;
         }
         setProject(data);

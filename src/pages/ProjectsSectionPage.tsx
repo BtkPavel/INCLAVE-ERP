@@ -17,6 +17,9 @@ interface ProjectsSectionPageProps {
   subtitle: string;
   emptyTitle: string;
   emptyDescription: string;
+  basePath?: string;
+  createButtonLabel?: string;
+  modalTitle?: string;
 }
 
 export function ProjectsSectionPage({
@@ -26,6 +29,9 @@ export function ProjectsSectionPage({
   subtitle,
   emptyTitle,
   emptyDescription,
+  basePath,
+  createButtonLabel,
+  modalTitle,
 }: ProjectsSectionPageProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -33,9 +39,11 @@ export function ProjectsSectionPage({
   const projects = useProjects(category, version);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const isInvestment = category === 'investment';
   const canCreate = user?.role === 'director';
-  const listPath = isInvestment ? '/projects/invest' : '/projects/current';
+  const listPath = basePath ?? (category === 'investment' ? '/projects/invest' : '/projects/current');
+  const defaultCreateLabel = '+ Создать проект';
+  const defaultModalTitle =
+    category === 'investment' ? 'Новый инвест-проект' : 'Новый текущий проект';
 
   return (
     <div className={styles.section}>
@@ -51,7 +59,7 @@ export function ProjectsSectionPage({
             className={styles.createBtn}
             onClick={() => setModalOpen(true)}
           >
-            + Создать проект
+            {createButtonLabel ?? defaultCreateLabel}
           </button>
         )}
       </header>
@@ -63,7 +71,7 @@ export function ProjectsSectionPage({
         emptyDescription={emptyDescription}
       >
         {(data: PaginatedResponse<Project>) => (
-          <ProjectList projects={data.data} category={category} />
+          <ProjectList projects={data.data} category={category} basePath={listPath} />
         )}
       </ApiModuleShell>
 
@@ -71,7 +79,7 @@ export function ProjectsSectionPage({
         <ProjectModal
           open={modalOpen}
           category={category}
-          title={isInvestment ? 'Новый инвест-проект' : 'Новый текущий проект'}
+          title={modalTitle ?? defaultModalTitle}
           onClose={() => setModalOpen(false)}
           onSubmit={async (dto) => {
             const { data } = await create(dto);

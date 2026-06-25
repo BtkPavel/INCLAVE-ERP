@@ -11,6 +11,8 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectsInvestmentPage } from './pages/ProjectsInvestmentPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { ProjectsCurrentPage } from './pages/ProjectsCurrentPage';
+import { ProductsPage } from './pages/ProductsPage';
+import { ProductsListPage } from './pages/ProductsListPage';
 import { FinancePage } from './pages/FinancePage';
 import { FinanceExpensePage } from './pages/FinanceExpensePage';
 import { FinanceIncomePage } from './pages/FinanceIncomePage';
@@ -40,6 +42,13 @@ function AppRoutes() {
                   <Route path="current" element={<ProjectsCurrentPage />} />
                   <Route path="investment" element={<Navigate to="/projects/invest" replace />} />
                   <Route path="development" element={<Navigate to="/projects/current" replace />} />
+                </Route>
+                <Route path="/products" element={<ProductsPage />}>
+                  <Route index element={<ProductsListPage />} />
+                  <Route
+                    path=":projectId"
+                    element={<ProjectDetailPage category="investment" />}
+                  />
                 </Route>
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/tasks" element={<TasksPage />} />

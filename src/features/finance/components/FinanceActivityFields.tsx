@@ -64,7 +64,7 @@ export function FinanceActivityFields({
             ))}
           </FormSelect>
           {products.length === 0 && (
-            <span className={styles.fieldHint}>Создайте инвест-проект в разделе «Проекты»</span>
+            <span className={styles.fieldHint}>Создайте продукт в разделе «Продукты» или инвест-проект в «Проекты»</span>
           )}
         </label>
       )}
