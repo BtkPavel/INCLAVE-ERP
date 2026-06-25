@@ -10,7 +10,9 @@ export function useInvestmentProducts() {
     void projectsApi
       .list({ category: 'investment', perPage: 100 })
       .then((response) => {
-        if (!cancelled) setProjects(response.data);
+        if (!cancelled) {
+          setProjects(response.data.filter((project) => project.category === 'investment'));
+        }
       })
       .catch(() => {
         if (!cancelled) setProjects([]);

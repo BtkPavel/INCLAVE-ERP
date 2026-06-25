@@ -313,9 +313,18 @@ function saveProjects(projects) {
   saveJson(KEYS.projects, projects);
 }
 
+function normalizeProjectCategory(project) {
+  const raw = project.category;
+  if (raw === 'investment' || raw === 'current') return raw;
+  if (raw === 'development') return 'current';
+  if (project.requiredInvestments != null) return 'investment';
+  if (project.budget != null) return 'current';
+  return 'current';
+}
+
 function filterProjects(projects, { category, status } = {}) {
   return projects.filter((project) => {
-    if (category && project.category !== category) return false;
+    if (category && normalizeProjectCategory(project) !== category) return false;
     if (status && project.status !== status) return false;
     return true;
   });
@@ -342,13 +351,15 @@ function normalizeMembers(members) {
 }
 
 function normalizeProject(project) {
+  const category = normalizeProjectCategory(project);
   return {
     ...project,
+    category,
     methodology: PROJECT_METHODOLOGIES.has(project.methodology) ? project.methodology : 'waterfall',
     sprintWeeks: project.sprintWeeks ?? null,
     members: normalizeMembers(project.members),
-    requiredInvestments: project.requiredInvestments ?? null,
-    budget: project.budget ?? null,
+    requiredInvestments: category === 'investment' ? project.requiredInvestments ?? null : null,
+    budget: category === 'current' ? project.budget ?? null : null,
     documentation: project.documentation ?? null,
     createdBy: project.createdBy ?? project.managerId ?? null,
   };
@@ -415,7 +426,12 @@ app.post('/api/v1/projects', authMiddleware, (req, res) => {
     return;
   }
 
-  const category = dto.category === 'current' ? 'current' : 'investment';
+  const category =
+    dto.category === 'current' || dto.category === 'investment'
+      ? dto.category
+      : dto.budget != null && dto.budget !== '' && (dto.requiredInvestments == null || dto.requiredInvestments === '')
+        ? 'current'
+        : 'investment';
   const methodology = PROJECT_METHODOLOGIES.has(dto.methodology) ? dto.methodology : 'waterfall';
   const sprintWeeks =
     methodology === 'scrum' || methodology === 'hybrid'
@@ -440,9 +456,12 @@ app.post('/api/v1/projects', authMiddleware, (req, res) => {
     sprintWeeks,
     startDate: dto.startDate ?? null,
     endDate: dto.endDate ?? null,
-    budget: dto.budget != null && dto.budget !== '' ? Number(dto.budget) : null,
+    budget:
+      category === 'current' && dto.budget != null && dto.budget !== '' ? Number(dto.budget) : null,
     requiredInvestments:
-      dto.requiredInvestments != null && dto.requiredInvestments !== ''
+      category === 'investment' &&
+      dto.requiredInvestments != null &&
+      dto.requiredInvestments !== ''
         ? Number(dto.requiredInvestments)
         : null,
     members: normalizeMembers(dto.members),
@@ -1059,7 +1078,7 @@ function saveExpenses(expenses) {
 
 function isInvestmentProduct(projectId) {
   const project = findProject(projectId);
-  return Boolean(project && project.category === 'investment');
+  return Boolean(project && normalizeProjectCategory(project) === 'investment');
 }
 
 function resolveFinanceActivity(dto, current = null) {

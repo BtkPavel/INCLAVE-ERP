@@ -71,7 +71,11 @@ export function ProjectsSectionPage({
         emptyDescription={emptyDescription}
       >
         {(data: PaginatedResponse<Project>) => (
-          <ProjectList projects={data.data} category={category} basePath={listPath} />
+          <ProjectList
+            projects={data.data.filter((project) => project.category === category)}
+            category={category}
+            basePath={listPath}
+          />
         )}
       </ApiModuleShell>
 
