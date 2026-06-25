@@ -493,36 +493,42 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
                           {sprintTaskCounts[sprint.id]} задач в спринте
                         </p>
                       )}
-                      {canEdit && sprint.status === 'planned' && !activeSprint && (
-                        <button
-                          type="button"
-                          className={styles.startBtn}
-                          disabled={busy}
-                          onClick={() => void handleStartSprint(sprint.id)}
-                        >
-                          Запустить спринт
-                        </button>
-                      )}
-                      {canEdit && sprint.status === 'active' && (
-                        <button
-                          type="button"
-                          className={styles.completeBtn}
-                          disabled={busy}
-                          onClick={() => void handleCompleteSprint(sprint.id)}
-                        >
-                          Завершить спринт
-                        </button>
-                      )}
-                      {isDirector && (
-                        <button
-                          type="button"
-                          className={styles.deleteSprintBtn}
-                          disabled={busy}
-                          onClick={() => void handleDeleteSprint(sprint)}
-                        >
-                          Удалить
-                        </button>
-                      )}
+                      {(canEdit && sprint.status === 'planned' && !activeSprint) ||
+                      (canEdit && sprint.status === 'active') ||
+                      isDirector ? (
+                        <div className={styles.sprintActions}>
+                          {canEdit && sprint.status === 'planned' && !activeSprint && (
+                            <button
+                              type="button"
+                              className={styles.startBtn}
+                              disabled={busy}
+                              onClick={() => void handleStartSprint(sprint.id)}
+                            >
+                              Запустить спринт
+                            </button>
+                          )}
+                          {canEdit && sprint.status === 'active' && (
+                            <button
+                              type="button"
+                              className={styles.completeBtn}
+                              disabled={busy}
+                              onClick={() => void handleCompleteSprint(sprint.id)}
+                            >
+                              Завершить спринт
+                            </button>
+                          )}
+                          {isDirector && (
+                            <button
+                              type="button"
+                              className={styles.deleteSprintBtn}
+                              disabled={busy}
+                              onClick={() => void handleDeleteSprint(sprint)}
+                            >
+                              Удалить
+                            </button>
+                          )}
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -549,24 +555,26 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
                             {sprintTaskCounts[sprint.id]} задач в спринте
                           </p>
                         )}
-                        <button
-                          type="button"
-                          className={styles.reviewBtn}
-                          disabled={busy}
-                          onClick={() => setReviewingSprint(sprint)}
-                        >
-                          Просмотр и комментарии
-                        </button>
-                        {isDirector && (
+                        <div className={styles.sprintActions}>
                           <button
                             type="button"
-                            className={styles.deleteSprintBtn}
+                            className={styles.reviewBtn}
                             disabled={busy}
-                            onClick={() => void handleDeleteSprint(sprint)}
+                            onClick={() => setReviewingSprint(sprint)}
                           >
-                            Удалить
+                            Просмотр и комментарии
                           </button>
-                        )}
+                          {isDirector && (
+                            <button
+                              type="button"
+                              className={styles.deleteSprintBtn}
+                              disabled={busy}
+                              onClick={() => void handleDeleteSprint(sprint)}
+                            >
+                              Удалить
+                            </button>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
