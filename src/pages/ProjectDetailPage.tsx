@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { projectsApi } from '../api/modules/projects.api';
 import type { Project, ProjectCategory } from '../api/types/projects';
 import { ApiError } from '../api/errors';
 import { useAuth } from '../auth/AuthContext';
 import { MethodologyWorkspace } from '../features/projects/components/MethodologyWorkspace';
+import { ProjectDocumentation } from '../features/projects/components/ProjectDocumentation';
+import { ProjectDetailNav } from '../features/projects/components/ProjectDetailNav';
 import { ProjectEditModal } from '../features/projects/components/ProjectEditModal';
 import { ProjectHeader } from '../features/projects/components/ProjectHeader';
+import type { ProjectDetailSection } from '../features/projects/utils/projectDetailPath';
+import { getProjectDetailBasePath } from '../features/projects/utils/projectDetailPath';
 import { useProjectActions } from '../hooks/useModuleApi';
 import type { ProjectsOutletContext } from './ProjectsPage';
 import type { ProductsOutletContext } from './ProductsPage';
@@ -14,6 +18,7 @@ import styles from './ProjectDetailPage.module.css';
 
 interface ProjectDetailPageProps {
   category: ProjectCategory;
+  section?: ProjectDetailSection;
 }
 
 type DetailOutletContext = ProjectsOutletContext | ProductsOutletContext;
@@ -26,8 +31,9 @@ function canManageProject(userRole: string, project: Project) {
   return userRole === 'director' || project.createdBy === userRole;
 }
 
-export function ProjectDetailPage({ category }: ProjectDetailPageProps) {
+export function ProjectDetailPage({ category, section = 'workspace' }: ProjectDetailPageProps) {
   const { projectId } = useParams<{ projectId: string }>();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const { setDetailLabel } = useOutletContext<DetailOutletContext>();
   const { user } = useAuth();
@@ -75,6 +81,7 @@ export function ProjectDetailPage({ category }: ProjectDetailPageProps) {
   }, [project, setDetailLabel]);
 
   const canEdit = project && user ? canManageProject(user.role, project) : false;
+  const basePath = project ? getProjectDetailBasePath(pathname, category, project.id) : '';
 
   if (loading) {
     return <div className={styles.status}>Загрузка проекта…</div>;
@@ -97,7 +104,20 @@ export function ProjectDetailPage({ category }: ProjectDetailPageProps) {
         onEdit={() => setEditOpen(true)}
       />
 
-      <MethodologyWorkspace project={project} canEdit={!!canEdit} />
+      <ProjectDetailNav basePath={basePath} />
+
+      {section === 'documentation' ? (
+        <ProjectDocumentation
+          project={project}
+          canEdit={!!canEdit}
+          onSave={async (documentation) => {
+            const { data } = await update(project.id, { documentation });
+            setProject(data);
+          }}
+        />
+      ) : (
+        <MethodologyWorkspace project={project} canEdit={!!canEdit} />
+      )}
 
       {canEdit && (
         <ProjectEditModal

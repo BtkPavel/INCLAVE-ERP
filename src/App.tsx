@@ -38,7 +38,15 @@ function AppRoutes() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/projects" element={<ProjectsPage />}>
                   <Route path="invest/:projectId" element={<ProjectDetailPage category="investment" />} />
+                  <Route
+                    path="invest/:projectId/documentation"
+                    element={<ProjectDetailPage category="investment" section="documentation" />}
+                  />
                   <Route path="current/:projectId" element={<ProjectDetailPage category="current" />} />
+                  <Route
+                    path="current/:projectId/documentation"
+                    element={<ProjectDetailPage category="current" section="documentation" />}
+                  />
                   <Route path="invest" element={<ProjectsInvestmentPage />} />
                   <Route path="current" element={<ProjectsCurrentPage />} />
                   <Route path="investment" element={<Navigate to="/projects/invest" replace />} />
@@ -49,6 +57,10 @@ function AppRoutes() {
                   <Route
                     path=":projectId"
                     element={<ProjectDetailPage category="investment" />}
+                  />
+                  <Route
+                    path=":projectId/documentation"
+                    element={<ProjectDetailPage category="investment" section="documentation" />}
                   />
                 </Route>
                 <Route path="/calendar" element={<CalendarPage />} />

@@ -15,6 +15,7 @@ export interface Project {
   name: string;
   code: string;
   description: string | null;
+  documentation: string | null;
   category: ProjectCategory;
   status: ProjectStatus;
   methodology: ProjectMethodology;
@@ -47,6 +48,7 @@ export interface CreateProjectDto {
   name: string;
   code?: string;
   description?: string;
+  documentation?: string;
   category?: ProjectCategory;
   status?: ProjectStatus;
   methodology?: ProjectMethodology;

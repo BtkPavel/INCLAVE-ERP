@@ -9,7 +9,7 @@ const PROJECT_SECTIONS = [
   { to: '/projects/current', label: 'Текущие проекты' },
 ] as const;
 
-const PROJECT_DETAIL_RE = /^\/projects\/(invest|current)\/([^/]+)$/;
+const PROJECT_DETAIL_RE = /^\/projects\/(invest|current)\/([^/]+)(?:\/documentation)?$/;
 
 export interface ProjectsOutletContext {
   setDetailLabel: (label: string | null) => void;
@@ -18,7 +18,11 @@ export interface ProjectsOutletContext {
 function parseProjectDetail(pathname: string) {
   const match = pathname.match(PROJECT_DETAIL_RE);
   if (!match) return null;
-  return { section: match[1] as 'invest' | 'current' };
+  return {
+    section: match[1] as 'invest' | 'current',
+    projectId: match[2],
+    isDocumentation: pathname.endsWith('/documentation'),
+  };
 }
 
 function getBreadcrumbs(pathname: string, detailLabel: string | null): BreadcrumbItem[] {
@@ -26,6 +30,14 @@ function getBreadcrumbs(pathname: string, detailLabel: string | null): Breadcrum
 
   if (detail) {
     const section = detail.section === 'invest' ? PROJECT_SECTIONS[0] : PROJECT_SECTIONS[1];
+    const base = `/projects/${detail.section}/${detail.projectId}`;
+    if (detail.isDocumentation) {
+      return [
+        { label: section.label, to: section.to },
+        { label: detailLabel ?? 'Загрузка…', to: base },
+        { label: 'Документация' },
+      ];
+    }
     return [
       { label: section.label, to: section.to },
       { label: detailLabel ?? 'Загрузка…' },
@@ -49,7 +61,9 @@ export function ProjectsPage() {
   const isRoot = pathname === '/projects' || pathname === '/projects/';
 
   useEffect(() => {
-    setDetailLabel(null);
+    if (!parseProjectDetail(pathname)) {
+      setDetailLabel(null);
+    }
   }, [pathname]);
 
   if (isRoot) {

@@ -349,6 +349,7 @@ function normalizeProject(project) {
     members: normalizeMembers(project.members),
     requiredInvestments: project.requiredInvestments ?? null,
     budget: project.budget ?? null,
+    documentation: project.documentation ?? null,
     createdBy: project.createdBy ?? project.managerId ?? null,
   };
 }
@@ -432,6 +433,7 @@ app.post('/api/v1/projects', authMiddleware, (req, res) => {
     name,
     code: String(dto.code ?? '').trim() || projectCodeFromName(name),
     description: dto.description?.trim() || null,
+    documentation: dto.documentation?.trim() || null,
     category,
     status: dto.status ?? 'active',
     methodology,
@@ -486,6 +488,8 @@ app.patch('/api/v1/projects/:id', authMiddleware, (req, res) => {
     name: dto.name?.trim() ?? current.name,
     code: dto.code?.trim() ?? current.code,
     description: dto.description !== undefined ? dto.description.trim() || null : current.description,
+    documentation:
+      dto.documentation !== undefined ? dto.documentation.trim() || null : current.documentation,
     category:
       dto.category === 'current' || dto.category === 'investment' ? dto.category : current.category,
     methodology,
