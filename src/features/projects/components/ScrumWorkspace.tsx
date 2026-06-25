@@ -186,6 +186,25 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
     }
   }
 
+  async function handleDeleteBacklogTask(task: Task) {
+    if (!window.confirm(`Удалить задачу «${task.title}»?`)) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      await tasksApi.delete(task.id);
+      if (editingTask?.id === task.id) {
+        setEditingTask(null);
+      }
+      setNotice(`Задача «${task.title}» удалена`);
+      await reload();
+    } catch (err) {
+      setError(ApiError.isApiError(err) ? err.message : 'Не удалось удалить задачу');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleBoardStatus(task: Task) {
     if (!canEdit) return;
     const next = nextBoardStatus(task.status);
@@ -403,6 +422,16 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
                   ) : canEdit ? (
                     <span className={styles.sprintHint}>Сначала запланируйте спринт →</span>
                   ) : null}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className={styles.deleteTaskBtn}
+                      disabled={busy}
+                      onClick={() => void handleDeleteBacklogTask(task)}
+                    >
+                      Удалить
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

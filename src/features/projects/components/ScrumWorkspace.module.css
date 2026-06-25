@@ -433,6 +433,22 @@
   background: color-mix(in srgb, #c44 8%, transparent);
 }
 
+.deleteTaskBtn {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid color-mix(in srgb, #c44 30%, transparent);
+  background: transparent;
+  color: #c44;
+}
+
+.deleteTaskBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, #c44 8%, transparent);
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
