@@ -6,6 +6,7 @@ import type { Project } from '../../../api/types/projects';
 import type { Sprint } from '../../../api/types/sprints';
 import type { Task, TaskStatus } from '../../../api/types/tasks';
 import type { UserRole } from '../../../auth/users';
+import { useAuth } from '../../../auth/AuthContext';
 import { ApiError } from '../../../api/errors';
 import { TASK_STATUS_LABELS } from '../../tasks/constants';
 import { TaskPriorityBadge } from '../../tasks/components/TaskPriorityBadge';
@@ -56,6 +57,8 @@ function nextBoardStatus(current: TaskStatus): TaskStatus {
 }
 
 export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
+  const { user } = useAuth();
+  const isDirector = user?.role === 'director';
   const [tab, setTab] = useState<Tab>('backlog');
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [backlogTasks, setBacklogTasks] = useState<Task[]>([]);
@@ -234,6 +237,30 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
       await reload();
     } catch (err) {
       setError(ApiError.isApiError(err) ? err.message : 'Не удалось завершить спринт');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteSprint(sprint: Sprint) {
+    const taskCount = sprintTaskCounts[sprint.id] ?? 0;
+    const message =
+      taskCount > 0
+        ? `Удалить ${sprint.name}? ${taskCount} задач вернутся в бэклог.`
+        : `Удалить ${sprint.name}?`;
+    if (!window.confirm(message)) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      await projectsApi.deleteSprint(project.id, sprint.id);
+      if (tab === 'board' && activeSprint?.id === sprint.id) {
+        setTab('sprints');
+      }
+      setNotice(`Спринт «${sprint.name}» удалён`);
+      await reload();
+    } catch (err) {
+      setError(ApiError.isApiError(err) ? err.message : 'Не удалось удалить спринт');
     } finally {
       setBusy(false);
     }
@@ -446,6 +473,16 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
                       onClick={() => void handleCompleteSprint(sprint.id)}
                     >
                       Завершить спринт
+                    </button>
+                  )}
+                  {isDirector && (
+                    <button
+                      type="button"
+                      className={styles.deleteSprintBtn}
+                      disabled={busy}
+                      onClick={() => void handleDeleteSprint(sprint)}
+                    >
+                      Удалить
                     </button>
                   )}
                 </li>

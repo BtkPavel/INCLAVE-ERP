@@ -620,6 +620,35 @@ app.post('/api/v1/projects/:id/sprints/:sprintId/complete', authMiddleware, (req
   res.json({ data: sprints[idx] });
 });
 
+app.delete('/api/v1/projects/:id/sprints/:sprintId', authMiddleware, requireDirector, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+
+  const sprints = loadSprints();
+  const sprintId = req.params.sprintId;
+  const exists = sprints.some((s) => s.id === sprintId && s.projectId === project.id);
+  if (!exists) return notFound(res);
+
+  saveSprints(sprints.filter((s) => s.id !== sprintId));
+
+  const tasks = loadTasks();
+  let changed = false;
+  for (let i = 0; i < tasks.length; i += 1) {
+    if (tasks[i].sprintId === sprintId) {
+      tasks[i] = {
+        ...tasks[i],
+        sprintId: null,
+        status: 'todo',
+        updatedAt: new Date().toISOString(),
+      };
+      changed = true;
+    }
+  }
+  if (changed) saveTasks(tasks);
+
+  res.status(204).end();
+});
+
 // ─── Tasks ──────────────────────────────────────────────────────────────────
 
 function loadTasks() {

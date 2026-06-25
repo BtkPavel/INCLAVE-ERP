@@ -90,4 +90,8 @@ export const projectsApi = {
   completeSprint(projectId: string, sprintId: string): Promise<{ data: Sprint }> {
     return apiClient.post(`${BASE}/${projectId}/sprints/${sprintId}/complete`);
   },
+
+  deleteSprint(projectId: string, sprintId: string): Promise<void> {
+    return apiClient.delete(`${BASE}/${projectId}/sprints/${sprintId}`);
+  },
 };
