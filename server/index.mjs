@@ -32,6 +32,12 @@ import {
   notifyTaskComment,
   notifyTaskStatusChange,
 } from './notifications.mjs';
+import {
+  loadPassEntries,
+  normalizePassEntry,
+  savePassEntries,
+  sortPassEntries,
+} from './pass.mjs';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -1244,6 +1250,59 @@ app.delete('/api/v1/hr/employees/:id', authMiddleware, requireDirector, (req, re
   const next = employees.filter((e) => e.id !== req.params.id);
   if (next.length === employees.length) return notFound(res);
   saveEmployees(next);
+  res.status(204).end();
+});
+
+// ─── PASS (только директор) ─────────────────────────────────────────────────
+
+function loadPassVault() {
+  return sortPassEntries(loadPassEntries(loadJson, KEYS.passVault));
+}
+
+app.get('/api/v1/pass', authMiddleware, requireDirector, (req, res) => {
+  res.json(paginate(loadPassVault(), Number(req.query.page) || 1, Number(req.query.perPage) || 100));
+});
+
+app.post('/api/v1/pass', authMiddleware, requireDirector, (req, res) => {
+  const dto = req.body ?? {};
+  const entry = normalizePassEntry(dto);
+  if (!entry.title || !entry.login || !entry.password) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Название, логин и пароль обязательны' });
+    return;
+  }
+  const entries = loadPassEntries(loadJson, KEYS.passVault);
+  entries.push(entry);
+  savePassEntries(saveJson, KEYS.passVault, entries);
+  res.status(201).json({ data: entry });
+});
+
+app.patch('/api/v1/pass/:id', authMiddleware, requireDirector, (req, res) => {
+  const entries = loadPassEntries(loadJson, KEYS.passVault);
+  const idx = entries.findIndex((entry) => entry.id === req.params.id);
+  if (idx === -1) return notFound(res);
+  const dto = req.body ?? {};
+  const next = normalizePassEntry(
+    {
+      title: dto.title ?? entries[idx].title,
+      login: dto.login ?? entries[idx].login,
+      password: dto.password ?? entries[idx].password,
+    },
+    entries[idx],
+  );
+  if (!next.title || !next.login || !next.password) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Название, логин и пароль обязательны' });
+    return;
+  }
+  entries[idx] = next;
+  savePassEntries(saveJson, KEYS.passVault, entries);
+  res.json({ data: next });
+});
+
+app.delete('/api/v1/pass/:id', authMiddleware, requireDirector, (req, res) => {
+  const entries = loadPassEntries(loadJson, KEYS.passVault);
+  const next = entries.filter((entry) => entry.id !== req.params.id);
+  if (next.length === entries.length) return notFound(res);
+  savePassEntries(saveJson, KEYS.passVault, next);
   res.status(204).end();
 });
 

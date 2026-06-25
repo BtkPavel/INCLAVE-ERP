@@ -50,4 +50,5 @@ export const KEYS = {
   passwords: 'inclave-erp-passwords',
   notifications: 'inclave-erp-notifications',
   taskComments: 'inclave-erp-task-comments',
+  passVault: 'inclave-erp-pass-vault',
 };

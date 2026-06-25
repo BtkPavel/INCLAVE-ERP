@@ -54,6 +54,10 @@ export function canAccessPath(
   path: string,
   permissions?: UserPermissions,
 ): boolean {
+  if (path === '/pass' || path.startsWith('/pass/')) {
+    return role === 'director';
+  }
+
   const modules = permissions?.modules ?? DEFAULT_PERMISSIONS[role];
   return MODULE_ROUTES.some(({ key, prefix }) => {
     if (!modules[key]) return false;
@@ -81,19 +85,31 @@ export function getNavItemsForUser(
   role: UserRole,
   permissions?: UserPermissions,
 ) {
-  const all = [
-    { to: '/', label: 'Обзор', icon: '◈', end: true, key: 'overview' as const },
-    { to: '/projects', label: 'Проекты', icon: '▣', key: 'projects' as const },
-    { to: '/products', label: 'Продукты', icon: '◇', end: false, key: 'projects' as const },
-    { to: '/calendar', label: 'Календарь', icon: '◷', key: 'calendar' as const },
-    { to: '/tasks', label: 'Задачи', icon: '☑', key: 'tasks' as const },
-    { to: '/finance', label: 'Финансы', icon: '₽', end: false, key: 'finance' as const },
-    { to: '/hr', label: 'Кадры', icon: '◎', end: false, key: 'hr' as const },
-    { to: '/settings', label: 'Настройки', icon: '⚙', end: false, key: 'settings' as const },
+  const all: Array<{
+    to: string;
+    label: string;
+    icon: string;
+    end?: boolean;
+    key: keyof ModulePermissions;
+  }> = [
+    { to: '/', label: 'Обзор', icon: '◈', end: true, key: 'overview' },
+    { to: '/projects', label: 'Проекты', icon: '▣', key: 'projects' },
+    { to: '/products', label: 'Продукты', icon: '◇', end: false, key: 'projects' },
+    { to: '/calendar', label: 'Календарь', icon: '◷', key: 'calendar' },
+    { to: '/tasks', label: 'Задачи', icon: '☑', key: 'tasks' },
+    { to: '/finance', label: 'Финансы', icon: '₽', end: false, key: 'finance' },
+    { to: '/hr', label: 'Кадры', icon: '◎', end: false, key: 'hr' },
+    { to: '/settings', label: 'Настройки', icon: '⚙', end: false, key: 'settings' },
   ];
 
   const modules = permissions?.modules ?? DEFAULT_PERMISSIONS[role];
-  return all.filter((item) => modules[item.key]);
+  const items = all
+    .filter((item) => modules[item.key])
+    .map(({ to, label, icon, end }) => ({ to, label, icon, end }));
+  if (role === 'director') {
+    items.push({ to: '/pass', label: 'PASS', icon: '⊛', end: true });
+  }
+  return items;
 }
 
 export function canUseAssistant(_role: UserRole): boolean {
