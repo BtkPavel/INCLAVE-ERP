@@ -8,7 +8,7 @@ import type {
   ProjectStats,
   UpdateProjectDto,
 } from '../types/projects';
-import type { CreateSprintDto, Sprint } from '../types/sprints';
+import type { CreateSprintDto, CreateSprintCommentDto, Sprint, SprintComment } from '../types/sprints';
 import type { Task } from '../types/tasks';
 import { apiClient, apiMocks } from '../client';
 import type { QueryParams } from '../client';
@@ -93,5 +93,17 @@ export const projectsApi = {
 
   deleteSprint(projectId: string, sprintId: string): Promise<void> {
     return apiClient.delete(`${BASE}/${projectId}/sprints/${sprintId}`);
+  },
+
+  listSprintComments(projectId: string, sprintId: string): Promise<{ data: SprintComment[] }> {
+    return apiClient.get(`${BASE}/${projectId}/sprints/${sprintId}/comments`);
+  },
+
+  addSprintComment(
+    projectId: string,
+    sprintId: string,
+    dto: CreateSprintCommentDto,
+  ): Promise<{ data: SprintComment }> {
+    return apiClient.post(`${BASE}/${projectId}/sprints/${sprintId}/comments`, dto);
   },
 };

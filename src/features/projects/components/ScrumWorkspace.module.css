@@ -433,6 +433,39 @@
   background: color-mix(in srgb, #c44 8%, transparent);
 }
 
+.completedSection {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.completedTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.sprintCardCompleted {
+  opacity: 0.95;
+}
+
+.reviewBtn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+  margin-top: 8px;
+}
+
+.reviewBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .deleteTaskBtn {
   flex-shrink: 0;
   height: 32px;

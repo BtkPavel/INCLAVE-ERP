@@ -19,3 +19,17 @@ export interface CreateSprintDto {
   goal?: string;
   startDate?: ISODate;
 }
+
+export interface SprintComment {
+  id: Id;
+  sprintId: Id;
+  projectId: Id;
+  authorRole: Id;
+  authorName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface CreateSprintCommentDto {
+  text: string;
+}

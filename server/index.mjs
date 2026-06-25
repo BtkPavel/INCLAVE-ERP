@@ -649,6 +649,69 @@ app.delete('/api/v1/projects/:id/sprints/:sprintId', authMiddleware, requireDire
   res.status(204).end();
 });
 
+function findSprintForProject(projectId, sprintId) {
+  return loadSprints().find((s) => s.id === sprintId && s.projectId === projectId) ?? null;
+}
+
+function loadSprintComments() {
+  return loadJson(KEYS.sprintComments, []);
+}
+
+function saveSprintComments(comments) {
+  saveJson(KEYS.sprintComments, comments);
+}
+
+app.get('/api/v1/projects/:id/sprints/:sprintId/comments', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+  if (!ensureProjectAccess(req, res, project.id)) return;
+
+  const sprint = findSprintForProject(project.id, req.params.sprintId);
+  if (!sprint) return notFound(res);
+  if (sprint.status !== 'completed') {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Комментарии доступны только для завершённых спринтов' });
+    return;
+  }
+
+  const data = loadSprintComments()
+    .filter((comment) => comment.sprintId === sprint.id)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  res.json({ data });
+});
+
+app.post('/api/v1/projects/:id/sprints/:sprintId/comments', authMiddleware, (req, res) => {
+  const project = findProject(req.params.id);
+  if (!project) return notFound(res);
+  if (!ensureProjectAccess(req, res, project.id)) return;
+
+  const sprint = findSprintForProject(project.id, req.params.sprintId);
+  if (!sprint) return notFound(res);
+  if (sprint.status !== 'completed') {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Комментарии можно оставлять только в завершённых спринтах' });
+    return;
+  }
+
+  const text = String(req.body?.text ?? '').trim();
+  if (!text) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: 'Комментарий не может быть пустым' });
+    return;
+  }
+
+  const comment = {
+    id: crypto.randomUUID(),
+    sprintId: sprint.id,
+    projectId: project.id,
+    authorRole: req.user.role,
+    authorName: req.user.name,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  const comments = loadSprintComments();
+  comments.push(comment);
+  saveSprintComments(comments);
+  res.status(201).json({ data: comment });
+});
+
 // ─── Tasks ──────────────────────────────────────────────────────────────────
 
 function loadTasks() {

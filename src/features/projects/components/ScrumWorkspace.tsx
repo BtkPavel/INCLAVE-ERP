@@ -11,6 +11,7 @@ import { ApiError } from '../../../api/errors';
 import { TASK_STATUS_LABELS } from '../../tasks/constants';
 import { TaskPriorityBadge } from '../../tasks/components/TaskPriorityBadge';
 import { TaskDetailModal } from '../../tasks/components/TaskDetailModal';
+import { SprintReviewModal } from './SprintReviewModal';
 import styles from './ScrumWorkspace.module.css';
 
 interface ScrumWorkspaceProps {
@@ -71,10 +72,13 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const [sprintTaskCounts, setSprintTaskCounts] = useState<Record<string, number>>({});
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [reviewingSprint, setReviewingSprint] = useState<Sprint | null>(null);
   const [assignees, setAssignees] = useState<Array<{ role: UserRole; name: string }>>([]);
 
   const activeSprint = sprints.find((s) => s.status === 'active');
   const plannedSprints = sprints.filter((s) => s.status === 'planned');
+  const completedSprints = sprints.filter((s) => s.status === 'completed');
+  const openSprints = sprints.filter((s) => s.status !== 'completed');
   const assignableSprints = activeSprint
     ? [activeSprint, ...plannedSprints]
     : plannedSprints;
@@ -276,6 +280,9 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
       if (tab === 'board' && activeSprint?.id === sprint.id) {
         setTab('sprints');
       }
+      if (reviewingSprint?.id === sprint.id) {
+        setReviewingSprint(null);
+      }
       setNotice(`Спринт «${sprint.name}» удалён`);
       await reload();
     } catch (err) {
@@ -463,60 +470,109 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
             </form>
           )}
 
-          {sprints.length === 0 ? (
+          {openSprints.length === 0 && completedSprints.length === 0 ? (
             <p className={styles.empty}>Спринтов ещё нет. Запланируйте первый.</p>
           ) : (
-            <ul className={styles.sprintList}>
-              {sprints.map((sprint) => (
-                <li key={sprint.id} className={styles.sprintCard}>
-                  <div className={styles.sprintTop}>
-                    <strong>{sprint.name}</strong>
-                    <span className={`${styles.sprintStatus} ${styles[`sprint_${sprint.status}`]}`}>
-                      {SPRINT_STATUS_LABELS[sprint.status]}
-                    </span>
-                  </div>
-                  <p className={styles.sprintGoal}>{sprint.goal}</p>
-                  <p className={styles.sprintDates}>
-                    {formatDate(sprint.startDate)} — {formatDate(sprint.endDate)}
-                  </p>
-                  {(sprintTaskCounts[sprint.id] ?? 0) > 0 && (
-                    <p className={styles.sprintTasks}>
-                      {sprintTaskCounts[sprint.id]} задач в спринте
-                    </p>
-                  )}
-                  {canEdit && sprint.status === 'planned' && !activeSprint && (
-                    <button
-                      type="button"
-                      className={styles.startBtn}
-                      disabled={busy}
-                      onClick={() => void handleStartSprint(sprint.id)}
-                    >
-                      Запустить спринт
-                    </button>
-                  )}
-                  {canEdit && sprint.status === 'active' && (
-                    <button
-                      type="button"
-                      className={styles.completeBtn}
-                      disabled={busy}
-                      onClick={() => void handleCompleteSprint(sprint.id)}
-                    >
-                      Завершить спринт
-                    </button>
-                  )}
-                  {isDirector && (
-                    <button
-                      type="button"
-                      className={styles.deleteSprintBtn}
-                      disabled={busy}
-                      onClick={() => void handleDeleteSprint(sprint)}
-                    >
-                      Удалить
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <>
+              {openSprints.length > 0 && (
+                <ul className={styles.sprintList}>
+                  {openSprints.map((sprint) => (
+                    <li key={sprint.id} className={styles.sprintCard}>
+                      <div className={styles.sprintTop}>
+                        <strong>{sprint.name}</strong>
+                        <span className={`${styles.sprintStatus} ${styles[`sprint_${sprint.status}`]}`}>
+                          {SPRINT_STATUS_LABELS[sprint.status]}
+                        </span>
+                      </div>
+                      <p className={styles.sprintGoal}>{sprint.goal}</p>
+                      <p className={styles.sprintDates}>
+                        {formatDate(sprint.startDate)} — {formatDate(sprint.endDate)}
+                      </p>
+                      {(sprintTaskCounts[sprint.id] ?? 0) > 0 && (
+                        <p className={styles.sprintTasks}>
+                          {sprintTaskCounts[sprint.id]} задач в спринте
+                        </p>
+                      )}
+                      {canEdit && sprint.status === 'planned' && !activeSprint && (
+                        <button
+                          type="button"
+                          className={styles.startBtn}
+                          disabled={busy}
+                          onClick={() => void handleStartSprint(sprint.id)}
+                        >
+                          Запустить спринт
+                        </button>
+                      )}
+                      {canEdit && sprint.status === 'active' && (
+                        <button
+                          type="button"
+                          className={styles.completeBtn}
+                          disabled={busy}
+                          onClick={() => void handleCompleteSprint(sprint.id)}
+                        >
+                          Завершить спринт
+                        </button>
+                      )}
+                      {isDirector && (
+                        <button
+                          type="button"
+                          className={styles.deleteSprintBtn}
+                          disabled={busy}
+                          onClick={() => void handleDeleteSprint(sprint)}
+                        >
+                          Удалить
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {completedSprints.length > 0 && (
+                <div className={styles.completedSection}>
+                  <h4 className={styles.completedTitle}>Завершённые спринты</h4>
+                  <ul className={styles.sprintList}>
+                    {completedSprints.map((sprint) => (
+                      <li key={sprint.id} className={`${styles.sprintCard} ${styles.sprintCardCompleted}`}>
+                        <div className={styles.sprintTop}>
+                          <strong>{sprint.name}</strong>
+                          <span className={`${styles.sprintStatus} ${styles.sprint_completed}`}>
+                            {SPRINT_STATUS_LABELS[sprint.status]}
+                          </span>
+                        </div>
+                        <p className={styles.sprintGoal}>{sprint.goal}</p>
+                        <p className={styles.sprintDates}>
+                          {formatDate(sprint.startDate)} — {formatDate(sprint.endDate)}
+                        </p>
+                        {(sprintTaskCounts[sprint.id] ?? 0) > 0 && (
+                          <p className={styles.sprintTasks}>
+                            {sprintTaskCounts[sprint.id]} задач в спринте
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          className={styles.reviewBtn}
+                          disabled={busy}
+                          onClick={() => setReviewingSprint(sprint)}
+                        >
+                          Просмотр и комментарии
+                        </button>
+                        {isDirector && (
+                          <button
+                            type="button"
+                            className={styles.deleteSprintBtn}
+                            disabled={busy}
+                            onClick={() => void handleDeleteSprint(sprint)}
+                          >
+                            Удалить
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -621,6 +677,13 @@ export function ScrumWorkspace({ project, canEdit }: ScrumWorkspaceProps) {
         canEdit={canEdit}
         onClose={() => setEditingTask(null)}
         onSave={handleSaveTask}
+      />
+
+      <SprintReviewModal
+        open={!!reviewingSprint}
+        projectId={project.id}
+        sprint={reviewingSprint}
+        onClose={() => setReviewingSprint(null)}
       />
     </section>
   );
