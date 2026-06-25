@@ -64,8 +64,8 @@
 .icon {
   flex-shrink: 0;
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   color: var(--text-muted);
   transition: color 0.15s;
 }
