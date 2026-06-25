@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type {
   CreateOperationalExpenseDto,
   ExpenseBillingStatus,
+  FinanceActivityScope,
   OperationalExpense,
   PaymentRecurrence,
 } from '../../../api/types/finance';
@@ -11,6 +12,8 @@ import {
 } from '../constants';
 import { DatePicker } from '../../../components/DatePicker';
 import { FormSelect } from '../../../components/FormSelect';
+import { FinanceActivityFields } from './FinanceActivityFields';
+import { useInvestmentProducts } from '../hooks/useInvestmentProducts';
 import styles from './OperationalExpenseForm.module.css';
 
 interface OperationalExpenseFormProps {
@@ -28,9 +31,14 @@ export function OperationalExpenseForm({
   initial,
   onCancel,
 }: OperationalExpenseFormProps) {
+  const { projects } = useInvestmentProducts();
   const [title, setTitle] = useState(initial?.title ?? '');
   const [amount, setAmount] = useState(String(initial?.amount ?? ''));
   const [category, setCategory] = useState(initial?.category ?? '');
+  const [activityScope, setActivityScope] = useState<FinanceActivityScope>(
+    initial?.activityScope ?? 'core',
+  );
+  const [projectId, setProjectId] = useState(initial?.projectId ?? '');
   const [startDate, setStartDate] = useState(initial?.startDate ?? todayIso());
   const [billingStatus, setBillingStatus] = useState<ExpenseBillingStatus>(
     initial?.billingStatus ?? 'one_time',
@@ -54,6 +62,10 @@ export function OperationalExpenseForm({
       setError('Укажите корректную сумму');
       return;
     }
+    if (activityScope === 'product' && !projectId) {
+      setError('Выберите продукт из инвест-проектов');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -61,6 +73,8 @@ export function OperationalExpenseForm({
         title: title.trim(),
         amount: parsedAmount,
         category: category.trim() || undefined,
+        activityScope,
+        projectId: activityScope === 'product' ? projectId : null,
         startDate,
         billingStatus,
         recurrence: billingStatus === 'cyclic' ? recurrence : null,
@@ -69,6 +83,8 @@ export function OperationalExpenseForm({
         setTitle('');
         setAmount('');
         setCategory('');
+        setActivityScope('core');
+        setProjectId('');
         setStartDate(todayIso());
         setBillingStatus('one_time');
         setRecurrence('monthly');
@@ -82,6 +98,18 @@ export function OperationalExpenseForm({
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
+      <FinanceActivityFields
+        kind="expense"
+        activityScope={activityScope}
+        projectId={projectId}
+        products={projects}
+        onScopeChange={(scope) => {
+          setActivityScope(scope);
+          if (scope === 'core') setProjectId('');
+        }}
+        onProjectChange={setProjectId}
+      />
+
       <div className={styles.grid}>
         <label className={styles.field}>
           <span>Название</span>

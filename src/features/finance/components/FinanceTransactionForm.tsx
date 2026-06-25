@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import type { CreateTransactionDto, Transaction, TransactionType } from '../../../api/types/finance';
+import type { CreateTransactionDto, FinanceActivityScope, Transaction, TransactionType } from '../../../api/types/finance';
 import { DatePicker } from '../../../components/DatePicker';
+import { FinanceActivityFields } from './FinanceActivityFields';
+import { useInvestmentProducts } from '../hooks/useInvestmentProducts';
 import styles from './FinanceTransactionForm.module.css';
 
 interface FinanceTransactionFormProps {
@@ -24,9 +26,14 @@ export function FinanceTransactionForm({
   initial,
   onCancel,
 }: FinanceTransactionFormProps) {
+  const { projects } = useInvestmentProducts();
   const [description, setDescription] = useState(initial?.description ?? '');
   const [amount, setAmount] = useState(String(initial?.amount ?? ''));
   const [category, setCategory] = useState(initial?.category ?? '');
+  const [activityScope, setActivityScope] = useState<FinanceActivityScope>(
+    initial?.activityScope ?? 'core',
+  );
+  const [projectId, setProjectId] = useState(initial?.projectId ?? '');
   const [date, setDate] = useState(initial?.date ?? todayIso());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +51,10 @@ export function FinanceTransactionForm({
       setError('Укажите корректную сумму');
       return;
     }
+    if (activityScope === 'product' && !projectId) {
+      setError('Выберите продукт из инвест-проектов');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -52,6 +63,8 @@ export function FinanceTransactionForm({
         amount: parsedAmount,
         description: description.trim(),
         category: category.trim() || undefined,
+        activityScope,
+        projectId: activityScope === 'product' ? projectId : null,
         date,
         accountId: 'main',
       });
@@ -59,6 +72,8 @@ export function FinanceTransactionForm({
         setDescription('');
         setAmount('');
         setCategory('');
+        setActivityScope('core');
+        setProjectId('');
         setDate(todayIso());
       }
     } catch (err) {
@@ -70,6 +85,18 @@ export function FinanceTransactionForm({
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
+      <FinanceActivityFields
+        kind={type === 'income' ? 'income' : 'expense'}
+        activityScope={activityScope}
+        projectId={projectId}
+        products={projects}
+        onScopeChange={(scope) => {
+          setActivityScope(scope);
+          if (scope === 'core') setProjectId('');
+        }}
+        onProjectChange={setProjectId}
+      />
+
       <div className={styles.grid}>
         <label className={styles.field}>
           <span>Описание</span>

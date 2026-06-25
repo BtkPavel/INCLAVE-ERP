@@ -7,9 +7,11 @@ import {
 } from '../hooks/useModuleApi';
 import { OperationalExpenseForm } from '../features/finance/components/OperationalExpenseForm';
 import { OperationalExpensesList } from '../features/finance/components/OperationalExpensesList';
+import { useInvestmentProducts } from '../features/finance/hooks/useInvestmentProducts';
 import styles from './FinanceExpensePage.module.css';
 
 export function FinanceExpensePage() {
+  const { nameById } = useInvestmentProducts();
   const { version, create, update, remove } = useOperationalExpenseActions();
   const expensesState = useOperationalExpenses(version);
   const [editing, setEditing] = useState<OperationalExpense | null>(null);
@@ -24,7 +26,8 @@ export function FinanceExpensePage() {
           <span className={styles.fig}>FIG 1.4.2</span>
           <h2 className={styles.title}>Расходы</h2>
           <p className={styles.subtitle}>
-            Добавляйте расходы и назначайте статус «Циклично» — тогда платежи появятся в платежном календаре.
+            Укажите расход по основной деятельности или привяжите его к продукту из инвест-проектов.
+            Для цикличных платежей отметьте статус «Циклично» — тогда они появятся в платежном календаре.
           </p>
         </div>
         <Link to="/finance/payment-calendar" className={styles.calendarLink}>
@@ -55,6 +58,7 @@ export function FinanceExpensePage() {
       ) : (
         <OperationalExpensesList
           expenses={expenses}
+          productNameById={nameById}
           onEdit={setEditing}
           onDelete={async (id) => {
             await remove(id);

@@ -40,6 +40,8 @@ export const operationalExpensesStorage = {
       amount: dto.amount,
       currency: dto.currency ?? 'BYN',
       category: dto.category?.trim() || null,
+      activityScope: dto.activityScope,
+      projectId: dto.activityScope === 'product' ? (dto.projectId ?? null) : null,
       startDate: dto.startDate,
       billingStatus: dto.billingStatus,
       recurrence: validateRecurrence(dto.billingStatus, dto.recurrence),
@@ -63,11 +65,20 @@ export const operationalExpensesStorage = {
 
     const current = expenses[index];
     const billingStatus = dto.billingStatus ?? current.billingStatus;
+    const activityScope = dto.activityScope ?? current.activityScope ?? 'core';
+    const projectId =
+      activityScope === 'product'
+        ? dto.projectId !== undefined
+          ? dto.projectId ?? null
+          : current.projectId
+        : null;
     const updated: OperationalExpense = {
       ...current,
       ...dto,
       title: dto.title?.trim() ?? current.title,
       category: dto.category !== undefined ? dto.category.trim() || null : current.category,
+      activityScope,
+      projectId,
       billingStatus,
       recurrence: validateRecurrence(
         billingStatus,

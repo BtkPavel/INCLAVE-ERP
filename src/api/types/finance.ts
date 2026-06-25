@@ -3,6 +3,7 @@ import type { Id, ISODate, ListParams } from './common';
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
 export type TransactionType = 'income' | 'expense' | 'transfer';
 export type FinanceSection = 'income' | 'expense' | 'taxes';
+export type FinanceActivityScope = 'core' | 'product';
 /** Режим налогообложения дохода */
 export type IncomeTaxBase = 'profit' | 'revenue';
 export type Currency = 'BYN' | 'USD' | 'EUR' | 'RUB';
@@ -28,6 +29,8 @@ export interface OperationalExpense {
   amount: number;
   currency: Currency;
   category: string | null;
+  activityScope: FinanceActivityScope;
+  projectId: Id | null;
   startDate: ISODate;
   billingStatus: ExpenseBillingStatus;
   recurrence: PaymentRecurrence | null;
@@ -56,6 +59,8 @@ export interface CreateOperationalExpenseDto {
   amount: number;
   currency?: Currency;
   category?: string;
+  activityScope: FinanceActivityScope;
+  projectId?: Id | null;
   startDate: ISODate;
   billingStatus: ExpenseBillingStatus;
   recurrence?: PaymentRecurrence | null;
@@ -70,6 +75,7 @@ export interface Transaction {
   counterpartyAccountId: Id | null;
   description: string;
   category: string | null;
+  activityScope: FinanceActivityScope;
   projectId: Id | null;
   date: ISODate;
   createdAt: string;
@@ -148,7 +154,8 @@ export interface CreateTransactionDto {
   counterpartyAccountId?: Id;
   description: string;
   category?: string;
-  projectId?: Id;
+  activityScope: FinanceActivityScope;
+  projectId?: Id | null;
   date: ISODate;
 }
 

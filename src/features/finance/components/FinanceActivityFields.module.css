@@ -1,0 +1,67 @@
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-solid);
+  background: color-mix(in srgb, var(--accent) 4%, var(--bg-card));
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.scopeGroup {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.legend {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.scopeOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scopeOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-solid);
+  cursor: pointer;
+}
+
+.scopeActive {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-solid));
+  background: var(--accent-bg);
+}
+
+.scopeLabel {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.fieldHint {
+  font-size: 12px;
+  color: var(--text-muted);
+}

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import type { Transaction } from '../api/types/finance';
 import { FinanceTransactionForm } from '../features/finance/components/FinanceTransactionForm';
 import { FinanceTransactionList } from '../features/finance/components/FinanceTransactionList';
+import { useInvestmentProducts } from '../features/finance/hooks/useInvestmentProducts';
 import { useFinanceSection, useTransactionActions } from '../hooks/useModuleApi';
 import styles from './FinanceExpensePage.module.css';
 
 export function FinanceIncomePage() {
+  const { nameById } = useInvestmentProducts();
   const { version, create, update, remove } = useTransactionActions();
   const incomeState = useFinanceSection('income', version);
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -22,7 +24,8 @@ export function FinanceIncomePage() {
           <span className={styles.fig}>FIG 1.4.1</span>
           <h2 className={styles.title}>Доходы</h2>
           <p className={styles.subtitle}>
-            Учёт поступлений: добавляйте доходы и отслеживайте выручку предприятия.
+            Учёт поступлений: укажите выручку по основной деятельности или привяжите доход к продукту
+            из инвест-проектов.
           </p>
         </div>
       </div>
@@ -53,6 +56,7 @@ export function FinanceIncomePage() {
       ) : (
         <FinanceTransactionList
           items={items}
+          productNameById={nameById}
           emptyText="Доходов пока нет — создайте первый доход выше"
           onEdit={setEditing}
           onDelete={async (id) => {

@@ -955,6 +955,30 @@ function saveExpenses(expenses) {
   saveJson(KEYS.expenses, expenses);
 }
 
+function isInvestmentProduct(projectId) {
+  const project = findProject(projectId);
+  return Boolean(project && project.category === 'investment');
+}
+
+function resolveFinanceActivity(dto, current = null) {
+  const activityScope =
+    dto.activityScope === 'product' || dto.activityScope === 'core'
+      ? dto.activityScope
+      : current?.activityScope ?? 'core';
+  const projectId =
+    activityScope === 'product'
+      ? dto.projectId !== undefined
+        ? dto.projectId
+        : current?.projectId ?? null
+      : null;
+
+  if (activityScope === 'product' && (!projectId || !isInvestmentProduct(projectId))) {
+    return { ok: false, message: 'Укажите продукт из инвест-проектов' };
+  }
+
+  return { ok: true, activityScope, projectId };
+}
+
 app.get('/api/v1/finance/transactions', authMiddleware, (req, res) => {
   let items = loadTransactions();
   if (req.query.type) items = items.filter((t) => t.type === req.query.type);
@@ -969,6 +993,11 @@ app.get('/api/v1/finance/transactions/:id', authMiddleware, (req, res) => {
 
 app.post('/api/v1/finance/transactions', authMiddleware, (req, res) => {
   const dto = req.body ?? {};
+  const activity = resolveFinanceActivity(dto);
+  if (!activity.ok) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: activity.message });
+    return;
+  }
   const transaction = {
     id: crypto.randomUUID(),
     type: dto.type,
@@ -978,7 +1007,8 @@ app.post('/api/v1/finance/transactions', authMiddleware, (req, res) => {
     counterpartyAccountId: dto.counterpartyAccountId ?? null,
     description: String(dto.description ?? '').trim(),
     category: dto.category?.trim() || null,
-    projectId: dto.projectId ?? null,
+    activityScope: activity.activityScope,
+    projectId: activity.projectId,
     date: dto.date,
     createdAt: new Date().toISOString(),
   };
@@ -992,12 +1022,20 @@ app.patch('/api/v1/finance/transactions/:id', authMiddleware, (req, res) => {
   const transactions = loadTransactions();
   const idx = transactions.findIndex((t) => t.id === req.params.id);
   if (idx === -1) return notFound(res);
+  const current = transactions[idx];
   const dto = req.body ?? {};
+  const activity = resolveFinanceActivity(dto, current);
+  if (!activity.ok) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: activity.message });
+    return;
+  }
   transactions[idx] = {
-    ...transactions[idx],
+    ...current,
     ...dto,
-    description: dto.description?.trim() ?? transactions[idx].description,
-    category: dto.category !== undefined ? dto.category.trim() || null : transactions[idx].category,
+    description: dto.description?.trim() ?? current.description,
+    category: dto.category !== undefined ? dto.category.trim() || null : current.category,
+    activityScope: activity.activityScope,
+    projectId: activity.projectId,
   };
   saveTransactions(transactions);
   res.json({ data: transactions[idx] });
@@ -1027,6 +1065,11 @@ app.get('/api/v1/finance/operational-expenses', authMiddleware, (_req, res) => {
 
 app.post('/api/v1/finance/operational-expenses', authMiddleware, (req, res) => {
   const dto = req.body ?? {};
+  const activity = resolveFinanceActivity(dto);
+  if (!activity.ok) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: activity.message });
+    return;
+  }
   const now = new Date().toISOString();
   const billingStatus = dto.billingStatus;
   const recurrence = billingStatus === 'cyclic' ? (dto.recurrence ?? 'monthly') : null;
@@ -1036,6 +1079,8 @@ app.post('/api/v1/finance/operational-expenses', authMiddleware, (req, res) => {
     amount: dto.amount,
     currency: dto.currency ?? 'BYN',
     category: dto.category?.trim() || null,
+    activityScope: activity.activityScope,
+    projectId: activity.projectId,
     startDate: dto.startDate,
     billingStatus,
     recurrence,
@@ -1054,12 +1099,19 @@ app.patch('/api/v1/finance/operational-expenses/:id', authMiddleware, (req, res)
   if (idx === -1) return notFound(res);
   const current = expenses[idx];
   const dto = req.body ?? {};
+  const activity = resolveFinanceActivity(dto, current);
+  if (!activity.ok) {
+    res.status(400).json({ code: 'BAD_REQUEST', message: activity.message });
+    return;
+  }
   const billingStatus = dto.billingStatus ?? current.billingStatus;
   expenses[idx] = {
     ...current,
     ...dto,
     title: dto.title?.trim() ?? current.title,
     category: dto.category !== undefined ? dto.category.trim() || null : current.category,
+    activityScope: activity.activityScope,
+    projectId: activity.projectId,
     billingStatus,
     recurrence: billingStatus === 'cyclic' ? (dto.recurrence ?? current.recurrence ?? 'monthly') : null,
     updatedAt: new Date().toISOString(),

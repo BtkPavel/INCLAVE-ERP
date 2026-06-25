@@ -1,12 +1,14 @@
 import type { OperationalExpense } from '../../../api/types/finance';
 import {
   BILLING_STATUS_LABELS,
+  formatActivityMeta,
   PAYMENT_RECURRENCE_OPTIONS,
 } from '../constants';
 import styles from './OperationalExpensesList.module.css';
 
 interface OperationalExpensesListProps {
   expenses: OperationalExpense[];
+  productNameById?: Record<string, string>;
   onEdit: (expense: OperationalExpense) => void;
   onDelete: (id: string) => void;
 }
@@ -26,6 +28,7 @@ function recurrenceLabel(recurrence: OperationalExpense['recurrence']): string {
 
 export function OperationalExpensesList({
   expenses,
+  productNameById = {},
   onEdit,
   onDelete,
 }: OperationalExpensesListProps) {
@@ -52,6 +55,12 @@ export function OperationalExpensesList({
               </span>
             </div>
             <p className={styles.meta}>
+              {formatActivityMeta(
+                expense.activityScope ?? 'core',
+                'expense',
+                expense.projectId ? productNameById[expense.projectId] : null,
+              )}
+              {' · '}
               {formatMoney(expense.amount, expense.currency)}
               {expense.category ? ` · ${expense.category}` : ''}
               {' · '}первый платёж {new Date(expense.startDate).toLocaleDateString('ru-RU')}

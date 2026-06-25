@@ -100,7 +100,8 @@ export const financeService = {
       counterpartyAccountId: dto.counterpartyAccountId ?? null,
       description: dto.description.trim(),
       category: dto.category?.trim() || null,
-      projectId: dto.projectId ?? null,
+      activityScope: dto.activityScope,
+      projectId: dto.activityScope === 'product' ? (dto.projectId ?? null) : null,
       date: dto.date,
     });
     return { data: transaction };
@@ -110,10 +111,19 @@ export const financeService = {
     id: string,
     dto: Partial<CreateTransactionDto>,
   ): { data: Transaction } | null {
+    const activityScope = dto.activityScope;
+    const projectId =
+      activityScope === 'product'
+        ? dto.projectId ?? null
+        : activityScope === 'core'
+          ? null
+          : undefined;
     const updated = financeStorage.updateTransaction(id, {
       ...dto,
       description: dto.description?.trim(),
       category: dto.category !== undefined ? dto.category.trim() || null : undefined,
+      ...(activityScope !== undefined ? { activityScope } : {}),
+      ...(projectId !== undefined ? { projectId } : {}),
     });
     return updated ? { data: updated } : null;
   },
