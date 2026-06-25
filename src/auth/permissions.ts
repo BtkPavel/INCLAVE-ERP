@@ -92,14 +92,14 @@ export function getNavItemsForUser(
     end?: boolean;
     key: keyof ModulePermissions;
   }> = [
-    { to: '/', label: 'Обзор', icon: '◈', end: true, key: 'overview' },
-    { to: '/projects', label: 'Проекты', icon: '▣', key: 'projects' },
-    { to: '/products', label: 'Продукты', icon: '◇', end: false, key: 'projects' },
-    { to: '/calendar', label: 'Календарь', icon: '◷', key: 'calendar' },
-    { to: '/tasks', label: 'Задачи', icon: '☑', key: 'tasks' },
-    { to: '/finance', label: 'Финансы', icon: '₽', end: false, key: 'finance' },
-    { to: '/hr', label: 'Кадры', icon: '◎', end: false, key: 'hr' },
-    { to: '/settings', label: 'Настройки', icon: '⚙', end: false, key: 'settings' },
+    { to: '/', label: 'Обзор', icon: 'space_dashboard', end: true, key: 'overview' },
+    { to: '/projects', label: 'Проекты', icon: 'folder_open', key: 'projects' },
+    { to: '/products', label: 'Продукты', icon: 'inventory_2', end: false, key: 'projects' },
+    { to: '/calendar', label: 'Календарь', icon: 'calendar_today', key: 'calendar' },
+    { to: '/tasks', label: 'Задачи', icon: 'task_alt', key: 'tasks' },
+    { to: '/finance', label: 'Финансы', icon: 'payments', end: false, key: 'finance' },
+    { to: '/hr', label: 'Кадры', icon: 'groups', end: false, key: 'hr' },
+    { to: '/settings', label: 'Настройки', icon: 'settings', end: false, key: 'settings' },
   ];
 
   const modules = permissions?.modules ?? DEFAULT_PERMISSIONS[role];
@@ -107,7 +107,7 @@ export function getNavItemsForUser(
     .filter((item) => modules[item.key])
     .map(({ to, label, icon, end }) => ({ to, label, icon, end }));
   if (role === 'director') {
-    items.push({ to: '/pass', label: 'PASS', icon: '🔒', end: true });
+    items.push({ to: '/pass', label: 'PASS', icon: 'lock', end: true });
   }
   return items;
 }

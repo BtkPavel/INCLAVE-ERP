@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { getNavItemsForUser } from '../auth/permissions';
+import { NavIcon } from './NavIcon';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -35,10 +36,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   }
                   onClick={onClose}
                 >
-                  <span className={styles.icon} aria-hidden>
-                    {item.icon}
-                  </span>
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      <NavIcon name={item.icon} className={styles.icon} filled={isActive} />
+                      {item.label}
+                    </>
+                  )}
                 </NavLink>
               </li>
             ))}
