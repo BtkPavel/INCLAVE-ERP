@@ -107,7 +107,7 @@ export function getNavItemsForUser(
     .filter((item) => modules[item.key])
     .map(({ to, label, icon, end }) => ({ to, label, icon, end }));
   if (role === 'director') {
-    items.push({ to: '/pass', label: 'PASS', icon: '⊛', end: true });
+    items.push({ to: '/pass', label: 'PASS', icon: '🔒', end: true });
   }
   return items;
 }
