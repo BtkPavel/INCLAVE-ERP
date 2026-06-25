@@ -32,8 +32,6 @@ export function NavIcon({ name, className, filled = false }: NavIconProps) {
     <svg
       className={className}
       viewBox="0 0 24 24"
-      width="22"
-      height="22"
       aria-hidden
       fill="currentColor"
       style={filled ? { transform: 'scale(1.05)' } : undefined}
